@@ -1,7 +1,9 @@
 <script lang="ts">
 	//@ts-nocheck
 	import { onMount } from 'svelte';
-	import { uploadAttachesFile } from '$lib/utils/editor';
+	import { useConvexClient } from 'convex-svelte';
+	import { api } from '$convex/_generated/api.js';
+	import { uploadFeedFileWithClient } from './editor';
 
 	let {
 		readOnly = false,
@@ -12,6 +14,9 @@
 	} = $props();
 	let editor: any = $state(null);
 	let editorEl: HTMLElement;
+
+	// Get the convex client
+	const convexClient = useConvexClient();
 
 	onMount(async () => {
 		const { default: EditorJS } = await import('@editorjs/editorjs');
@@ -70,21 +75,18 @@
 						},
 						uploader: {
 							uploadByFile: async (file: File) => {
-								// if (!supabase || !feedId) {
-								// 	throw new Error('Supabase client and feedId are required for image uploads');
-								// }
-								// // Validate that the file is an image
-								// if (!file.type.startsWith('image/')) {
-								// 	throw new Error('File is not a valid image');
-								// }
-								// const result = await uploadAttachesFile(supabase, file, feedId);
-								// if (!result) {
-								// 	throw new Error('Image upload failed');
-								// }
-								// return {
-								// 	success: 1,
-								// 	file: result
-								// };
+								if (!feedId) {
+									throw new Error('Feed ID is required for image uploads');
+								}
+								// Validate that the file is an image
+								if (!file.type.startsWith('image/')) {
+									throw new Error('File is not a valid image');
+								}
+								const result = await uploadFeedFileWithClient(convexClient, file, feedId);
+								if (!result) {
+									throw new Error('Image upload failed');
+								}
+								return result;
 							}
 						}
 					}
@@ -97,21 +99,18 @@
 						buttonContent: 'Select audio file',
 						uploader: {
 							uploadByFile: async (file: File) => {
-								// if (!supabase || !feedId) {
-								// 	throw new Error('Supabase client and feedId are required for audio uploads');
-								// }
-								// // Validate that the file is an audio file
-								// if (!file.type.startsWith('audio/')) {
-								// 	throw new Error('File is not a valid audio file');
-								// }
-								// const result = await uploadAttachesFile(supabase, file, feedId);
-								// if (!result) {
-								// 	throw new Error('Audio upload failed');
-								// }
-								// return {
-								// 	success: 1,
-								// 	file: result
-								// };
+								if (!feedId) {
+									throw new Error('Feed ID is required for audio uploads');
+								}
+								// Validate that the file is an audio file
+								if (!file.type.startsWith('audio/')) {
+									throw new Error('File is not a valid audio file');
+								}
+								const result = await uploadFeedFileWithClient(convexClient, file, feedId);
+								if (!result) {
+									throw new Error('Audio upload failed');
+								}
+								return result;
 							}
 						}
 					}

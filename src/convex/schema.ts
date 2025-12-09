@@ -7,16 +7,19 @@ const feed = defineTable({
   createdBy: v.string(),
 
   // title with default value
-  title: v.string(),
+  title: v.optional(v.string()),
+
+  // slug for URL-friendly identifier
+  slug: v.optional(v.string()),
 
   // content as an object (JSONB equivalent)
-  content: v.object({}),
+  content: v.optional(v.any()),
 
   // type supporting custom types with default 'article'
-  type: v.string(),
+  type: v.optional(v.string()),
 
   // public flag with default false
-  public: v.boolean(),
+  public: v.optional(v.boolean()),
 
   // meta as optional object (JSON equivalent)
   meta: v.optional(v.object({})),
@@ -33,7 +36,8 @@ const feed = defineTable({
   .index("public_created_at", ["public", "createdAt"]) // For public feeds ordered by creation time (descending)
   .index("created_by_public", ["createdBy", "public"]) // For queries filtering both createdBy and public
   .index("type", ["type"])
-  .index("created_at", ["createdAt"]);
+  .index("created_at", ["createdAt"])
+  .index("by_slug", ["slug"]); // For efficient slug-based lookups
 
 // Define the feed_collaborators table for role-based permissions
 const feedCollaborators = defineTable({

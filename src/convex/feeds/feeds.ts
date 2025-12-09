@@ -4,10 +4,56 @@ import { authComponent } from "../auth";
 import type { Id } from "../_generated/dataModel";
 import { hasFeedPermission, type FeedRole } from "./feedCollaborators";
 
+// Helper function to generate URL-friendly slugs
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "") // Remove special characters
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/--+/g, "-") // Replace multiple hyphens with single hyphen
+    .trim();
+}
+
+// Helper function to ensure slug uniqueness by appending numbers if needed
+async function ensureUniqueSlug(ctx: any, baseSlug: string): Promise<string> {
+  let slug = baseSlug;
+  let counter = 1;
+  let existingFeed = await ctx.db
+    .query("feed")
+    .withIndex("by_slug", (q: any) => q.eq("slug", slug))
+    .unique();
+
+  while (existingFeed) {
+    slug = `${baseSlug}-${counter}`;
+    existingFeed = await ctx.db
+      .query("feed")
+      .withIndex("by_slug", (q: any) => q.eq("slug", slug))
+      .unique();
+    counter++;
+  }
+
+  return slug;
+}
+
 // Type for feed roles (though we'll use the imported one)
 // type FeedRole = "read" | "edit" | "admin";
 
-// Query: Get all feeds (filtered by permissions)
+// Helper function to fetch feeds by multiple IDs efficiently
+async function getFeedsByIds(ctx: any, feedIds: string[]) {
+  if (feedIds.length === 0) return [];
+
+  // Since Convex doesn't support multi-get directly, we'll fetch them efficiently in batches
+  const feeds = [];
+  for (const feedId of feedIds) {
+    const feed = await ctx.db.get(feedId);
+    if (feed) {
+      feeds.push(feed);
+    }
+  }
+  return feeds;
+}
+
+// Query: Get all feeds (filtered by permissions) with optimized fetching
 export const getAllFeeds = query({
   args: {
     limit: v.optional(v.number()),
@@ -19,12 +65,6 @@ export const getAllFeeds = query({
       throw new Error("Authentication required");
     }
     const { limit = 20, cursor } = args;
-
-    // Get feeds that are either public or the user has access to
-    const allPublicFeeds = await ctx.db
-      .query("feed")
-      .withIndex("public", (q) => q.eq("public", true))
-      .collect();
 
     // Get feeds created by the user
     const userFeeds = await ctx.db
@@ -40,32 +80,31 @@ export const getAllFeeds = query({
 
     const collaboratingFeedIds = userCollaborations.map((c) => c.feedId);
 
-    // Optimized: Use a single query to fetch all collaborating feeds instead of individual lookups
-    let collaboratingFeeds = [];
-    if (collaboratingFeedIds.length > 0) {
-      // Query for each feed ID individually but more efficiently than Promise.all with ctx.db.get
-      // We'll batch them by querying with the 'created_by' index multiple times
-      // However, the optimal approach would be to have a compound index or a single query that can fetch multiple specific IDs
+    // Fetch collaborating feeds efficiently
+    const collaboratingFeeds = await getFeedsByIds(ctx, collaboratingFeedIds);
 
-      // For better performance, we need to fetch feeds by their IDs more efficiently
-      // Since Convex doesn't directly support multi-get, we'll iterate but with better structure
-      for (const feedId of collaboratingFeedIds) {
-        const feed = await ctx.db.get(feedId);
-        if (feed) {
-          collaboratingFeeds.push(feed);
-        }
-      }
-    }
+    // For public feeds, we only include them if they're not already included in user feeds or collaborating feeds
+    const userAndCollaboratingFeedIds = new Set([
+      ...userFeeds.map((feed) => feed._id),
+      ...collaboratingFeeds.map((feed) => feed._id),
+    ]);
 
-    // Combine all feeds, removing duplicates
+    // Get additional public feeds that the user doesn't already have access to
+    const allPublicFeeds = await ctx.db
+      .query("feed")
+      .withIndex("public", (q) => q.eq("public", true))
+      .collect();
+
+    const additionalPublicFeeds = allPublicFeeds.filter(
+      (feed) => !userAndCollaboratingFeedIds.has(feed._id),
+    );
+
+    // Combine all feeds
     const allFeeds = [
-      ...allPublicFeeds,
       ...userFeeds,
       ...collaboratingFeeds,
-    ].filter(
-      (feed, index, self) =>
-        feed && self.findIndex((f) => f._id === feed._id) === index,
-    ) as any[];
+      ...additionalPublicFeeds,
+    ];
 
     // Sort by creation date (newest first)
     allFeeds.sort((a, b) => b.createdAt - a.createdAt);
@@ -198,6 +237,37 @@ export const getPublicFeeds = query({
   },
 });
 
+// Query: Get a single feed by slug with permission check
+export const getFeedBySlug = query({
+  args: {
+    slug: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) {
+      throw new Error("Authentication required");
+    }
+
+    // Get the feed by slug
+    const feed = await ctx.db
+      .query("feed")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .unique();
+
+    if (!feed) {
+      throw new Error("Feed not found");
+    }
+
+    // Check permission using the existing permission system
+    const hasPermission = await hasFeedPermission(ctx, feed._id, user._id);
+    if (!hasPermission) {
+      throw new Error("You do not have permission to access this feed");
+    }
+
+    return feed;
+  },
+});
+
 // Mutation: Create a new feed
 export const createFeed = mutation({
   args: {
@@ -214,9 +284,14 @@ export const createFeed = mutation({
       throw new Error("Authentication required");
     }
 
+    // Generate slug from title
+    const baseSlug = generateSlug(args.title);
+    const uniqueSlug = await ensureUniqueSlug(ctx, baseSlug);
+
     const feedId = await ctx.db.insert("feed", {
       createdBy: user._id,
       title: args.title || "Untitled Feed",
+      slug: uniqueSlug,
       content: args.content || {},
       type: args.type || "article",
       public: args.public || false,
@@ -234,7 +309,7 @@ export const updateFeed = mutation({
   args: {
     feedId: v.id("feed"),
     title: v.optional(v.string()),
-    content: v.optional(v.object({})),
+    content: v.optional(v.any()),
     type: v.optional(v.string()),
     public: v.optional(v.boolean()),
     meta: v.optional(v.object({})),
@@ -263,8 +338,8 @@ export const updateFeed = mutation({
       throw new Error("Feed not found");
     }
 
-    // Update the feed
-    await ctx.db.patch(args.feedId, {
+    // Prepare the updates object
+    const updates: any = {
       title: args.title,
       content: args.content,
       type: args.type,
@@ -272,7 +347,17 @@ export const updateFeed = mutation({
       meta: args.meta,
       coverFileId: args.coverFileId,
       updatedAt: args.updatedAt || Date.now(),
-    });
+    };
+
+    // If the title is being updated, also update the slug
+    if (args.title && args.title !== feed.title) {
+      const baseSlug = generateSlug(args.title);
+      const uniqueSlug = await ensureUniqueSlug(ctx, baseSlug);
+      updates.slug = uniqueSlug;
+    }
+
+    // Update the feed
+    await ctx.db.patch(args.feedId, updates);
 
     return args.feedId;
   },

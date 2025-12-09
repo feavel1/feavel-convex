@@ -87,3 +87,91 @@ bun x convex env set GOOGLE_CLIENT_SECRET your_google_client_secret_here
 - `src/lib/components/` - UI components and forms
 - `src/lib/components/ui/` - shadcn-svelte components
 - `docs/` - Additional documentation files
+
+## Form Handling with Superforms
+
+The project uses sveltekit-superforms with Zod for form validation. Follow this pattern:
+
+### Schema Definition (in +page.svelte module script)
+
+```ts
+import { z } from 'zod/v4';
+
+export const settingsSchema = z.object({
+	full_name: z.string().max(100).nullable(),
+	description: z.string().max(500).nullable(),
+	birthday: z.string().or(z.literal('')).nullable()
+});
+
+export type SettingsSchema = typeof settingsSchema;
+```
+
+### Server-side Loading (+page.server.ts)
+
+```ts
+import { superValidate } from 'sveltekit-superforms';
+import { zod4 } from 'sveltekit-superforms/adapters';
+import { settingsSchema } from './+page.svelte';
+import type { PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ parent }) => {
+	const { session, userProfile } = await parent();
+
+	const formData = {
+		full_name: userProfile?.full_name ?? null,
+		description: userProfile?.description ?? null,
+		birthday: userProfile?.birthday ?? null
+	};
+
+	return {
+		userProfile,
+		session,
+		form: await superValidate(formData, zod4(settingsSchema))
+	};
+};
+```
+
+### Client-side Implementation (+page.svelte)
+
+```svelte
+<script>
+	import { superForm } from 'sveltekit-superforms';
+	import { zod4Client } from 'sveltekit-superforms/adapters';
+	import { settingsSchema } from './+page.svelte';
+
+	const { data } = $props();
+	const { form: formData } = data;
+
+	const form = superForm(formData, {
+		validators: zod4Client(settingsSchema),
+		resetForm: false,
+		onResult: () => {
+			// Focus on first error
+			if (form.errors && Object.keys(form.errors).length) {
+				requestAnimationFrame(() => {
+					document.querySelector < HTMLElement > '[aria-invalid="true"]'?.focus();
+				});
+			}
+		},
+		onUpdated({ form }) {
+			if (form.message) {
+				toast.success(form.message.text);
+			}
+		}
+	});
+
+	const { form: formValues, enhance, submitting, message } = form;
+</script>
+
+<form method="POST" use:enhance>
+	<input bind:value={$formValues.full_name} />
+	<!-- Form fields -->
+	<button disabled={$submitting}
+		>{#if $submitting}
+			Saving...
+		{:else}
+			Save Changes
+		{/if}</button
+	>
+</form>
+```

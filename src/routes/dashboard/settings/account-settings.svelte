@@ -19,8 +19,8 @@
 
 	let { user }: Props = $props();
 
-	let name = $state(user?.name || '');
-	let image = $state(user?.image || '');
+	let name = $derived(user?.name || '');
+	let image = $derived(user?.image || '');
 	let isLoading = $state(false);
 	let selectedFile = $state<File | null>(null);
 	let fileInput = $state<HTMLInputElement>();

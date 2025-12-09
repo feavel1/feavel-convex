@@ -7,7 +7,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   const { slug } = params;
 
   // Validate slug parameter
-  if (!slug || typeof slug !== 'string' || slug.length === 0) {
+  if (!slug || typeof slug !== "string" || slug.length === 0) {
     throw error(400, "Invalid feed slug");
   }
 

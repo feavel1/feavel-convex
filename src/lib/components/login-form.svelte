@@ -20,7 +20,7 @@
 	let email = $state(authEmailCtx?.get() ?? '');
 	let password = $state('');
 	let name = $state('');
-	let isSignUp = $state(mode === 'signup');
+	let isSignUp = $derived(mode === 'signup');
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
 

@@ -3,9 +3,12 @@
   import favicon from '$lib/assets/favicon.svg';
   import { createSvelteAuthClient } from '@mmailaender/convex-better-auth-svelte/svelte';
   import { authClient } from '$lib/auth-client';
+  import { Toaster } from '$lib/components/ui/sonner';
   createSvelteAuthClient({ authClient });
   let { children } = $props();
 </script>
+
+<Toaster />
 <svelte:head>
   <link rel="icon" href={favicon} />
 </svelte:head>

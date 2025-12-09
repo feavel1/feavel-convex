@@ -8,8 +8,7 @@
 		class: className = '',
 		content = null,
 		onChange,
-		feedId,
-		supabase
+		feedId
 	} = $props();
 	let editor: any = $state(null);
 	let editorEl: HTMLElement;
@@ -71,21 +70,21 @@
 						},
 						uploader: {
 							uploadByFile: async (file: File) => {
-								if (!supabase || !feedId) {
-									throw new Error('Supabase client and feedId are required for image uploads');
-								}
-								// Validate that the file is an image
-								if (!file.type.startsWith('image/')) {
-									throw new Error('File is not a valid image');
-								}
-								const result = await uploadAttachesFile(supabase, file, feedId);
-								if (!result) {
-									throw new Error('Image upload failed');
-								}
-								return {
-									success: 1,
-									file: result
-								};
+								// if (!supabase || !feedId) {
+								// 	throw new Error('Supabase client and feedId are required for image uploads');
+								// }
+								// // Validate that the file is an image
+								// if (!file.type.startsWith('image/')) {
+								// 	throw new Error('File is not a valid image');
+								// }
+								// const result = await uploadAttachesFile(supabase, file, feedId);
+								// if (!result) {
+								// 	throw new Error('Image upload failed');
+								// }
+								// return {
+								// 	success: 1,
+								// 	file: result
+								// };
 							}
 						}
 					}
@@ -98,21 +97,21 @@
 						buttonContent: 'Select audio file',
 						uploader: {
 							uploadByFile: async (file: File) => {
-								if (!supabase || !feedId) {
-									throw new Error('Supabase client and feedId are required for audio uploads');
-								}
-								// Validate that the file is an audio file
-								if (!file.type.startsWith('audio/')) {
-									throw new Error('File is not a valid audio file');
-								}
-								const result = await uploadAttachesFile(supabase, file, feedId);
-								if (!result) {
-									throw new Error('Audio upload failed');
-								}
-								return {
-									success: 1,
-									file: result
-								};
+								// if (!supabase || !feedId) {
+								// 	throw new Error('Supabase client and feedId are required for audio uploads');
+								// }
+								// // Validate that the file is an audio file
+								// if (!file.type.startsWith('audio/')) {
+								// 	throw new Error('File is not a valid audio file');
+								// }
+								// const result = await uploadAttachesFile(supabase, file, feedId);
+								// if (!result) {
+								// 	throw new Error('Audio upload failed');
+								// }
+								// return {
+								// 	success: 1,
+								// 	file: result
+								// };
 							}
 						}
 					}

@@ -9,6 +9,8 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as feeds_feedCollaborators from "../feeds/feedCollaborators.js";
+import type * as feeds_feeds from "../feeds/feeds.js";
 import type * as http from "../http.js";
 import type * as storage from "../storage.js";
 
@@ -20,6 +22,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  "feeds/feedCollaborators": typeof feeds_feedCollaborators;
+  "feeds/feeds": typeof feeds_feeds;
   http: typeof http;
   storage: typeof storage;
 }>;

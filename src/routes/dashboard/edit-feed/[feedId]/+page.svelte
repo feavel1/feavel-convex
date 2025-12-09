@@ -1,9 +1,9 @@
 <script lang="ts">
   import { useConvexClient, useQuery } from 'convex-svelte';
-  import { page } from '$app/stores';
   import { api } from '$convex/_generated/api.js';
   import Editor from "$lib/components/feed-editor/Editor.svelte";
   import type { Id } from "$convex/_generated/dataModel";
+  import { page } from '$app/stores';
 
   // Define feed type
   interface Feed {

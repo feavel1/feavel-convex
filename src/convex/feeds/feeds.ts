@@ -338,16 +338,16 @@ export const updateFeed = mutation({
       throw new Error("Feed not found");
     }
 
-    // Prepare the updates object
-    const updates: any = {
-      title: args.title,
-      content: args.content,
-      type: args.type,
-      public: args.public,
-      meta: args.meta,
-      coverFileId: args.coverFileId,
-      updatedAt: args.updatedAt || Date.now(),
-    };
+    // Prepare the updates object, only including defined values
+    const updates: any = {};
+
+    if (args.title !== undefined) updates.title = args.title;
+    if (args.content !== undefined) updates.content = args.content;
+    if (args.type !== undefined) updates.type = args.type;
+    if (args.public !== undefined) updates.public = args.public;
+    if (args.meta !== undefined) updates.meta = args.meta;
+    if (args.coverFileId !== undefined) updates.coverFileId = args.coverFileId;
+    updates.updatedAt = args.updatedAt || Date.now();
 
     // If the title is being updated, also update the slug
     if (args.title && args.title !== feed.title) {

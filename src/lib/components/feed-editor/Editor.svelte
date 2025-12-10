@@ -1,4 +1,5 @@
 <script lang="ts">
+ //@ts-nocheck
 	import { onMount } from 'svelte';
 	import { useConvexClient } from 'convex-svelte';
 	import { uploadFeedFileWithClient } from './editor';

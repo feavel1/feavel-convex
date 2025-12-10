@@ -9,15 +9,9 @@
   // Get feedId from URL params
   let feedId: Id<"feed"> = params.feedId as Id<"feed">;
 
-  // First check authentication status
-  let authQuery = $derived(useQuery(api.auth.getCurrentUser, () => ({})));
-
-  // Only make the feed query if authentication is successful
-  let feedQuery = $derived(
-    authQuery.data ? useQuery(api.feeds.feeds.getFeedById, () => ({ feedId })) : null
-  );
-
-  let feed = $derived(feedQuery?.data);
+  // Get the feed data for real-time editing
+  let feedQuery = $derived(useQuery(api.feeds.feeds.getFeedById, () => ({ feedId })));
+  let feed = $derived(feedQuery.data);
 
   const convexClient = useConvexClient();
   let saving = $state<boolean>(false);
@@ -25,15 +19,15 @@
   let lastUpdateByOther = $state<string | null>(null);
   let lastSavedVersion = $state<number | null>(null); // Track the version of the last saved content
 
-  // Track overall loading and error states
-  let overallLoading = $state<boolean>(true);
-  let overallError = $state<string | null>(null);
+  // Track loading and error states
+  let isLoading = $derived(feedQuery.isLoading);
+  let error = $derived(feedQuery.error);
 
   // Debounce timer for auto-saving
   let saveTimeout: NodeJS.Timeout | null = $state(null);
 
   // Unified update function that handles all field changes
-  function queueUpdate(field: any, value: any) {
+  function queueUpdate(field: string, value: any) {
     if (!feed) return;
 
     // Clear any existing timeout
@@ -70,13 +64,13 @@
   }
 
   // Handle content changes from the editor
-  async function handleContentChange(newContent: any) {
+  function handleContentChange(newContent: any) {
     if (!feed) return;
     queueUpdate('content', newContent);
   }
 
   // Handle title changes
-  async function handleTitleChange() {
+  function handleTitleChange() {
     if (!feed) return;
     queueUpdate('title', feed.title);
   }
@@ -94,52 +88,18 @@
       }
     }
   });
-
-  // Handle authentication state
-  $effect(() => {
-    if (authQuery.isLoading) {
-      overallLoading = true;
-      overallError = null;
-    } else if (authQuery.error) {
-      overallLoading = false;
-      overallError = "Authentication required. Please log in.";
-    } else if (authQuery.data) {
-      // Authentication successful, now check feed query
-      overallLoading = false;
-
-      // Only check feed query errors if feed query exists
-      if (feedQuery && feedQuery.error) {
-        overallError = feedQuery.error.message;
-      } else {
-        overallError = null;
-      }
-    }
-  });
-
-  // Handle feed query state if authentication is successful
-  $effect(() => {
-    if (authQuery.data && feedQuery) {
-      if (feedQuery.isLoading) {
-        overallLoading = true;
-      } else if (feedQuery.error && !overallError) {
-        overallError = feedQuery.error.message;
-      } else if (!feedQuery.isLoading && !overallError) {
-        overallLoading = false;
-      }
-    }
-  });
 </script>
 
 <div class="container mx-auto py-8">
-  {#if overallLoading}
+  {#if isLoading}
     <div class="text-center py-8">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       <p class="mt-2">Loading...</p>
     </div>
-  {:else if overallError}
+  {:else if error}
     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
       <strong class="font-bold">Error! </strong>
-      <span class="block sm:inline">{overallError}</span>
+      <span class="block sm:inline">{error.message}</span>
     </div>
   {:else if feed}
     {#if lastUpdateByOther}

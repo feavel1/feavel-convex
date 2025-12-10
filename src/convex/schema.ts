@@ -15,7 +15,7 @@ const feed = defineTable({
   // content as an object (JSONB equivalent)
   content: v.optional(v.any()),
 
-  // type supporting custom types with default 'article'
+  // type supporting custom types with default 'article', 'product', 'service'
   type: v.optional(v.string()),
 
   // public flag with default false

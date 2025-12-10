@@ -60,7 +60,7 @@
       } finally {
         saving = false;
       }
-    }, 3000); // 2 second debounce
+    }, 4000); // 2 second debounce
   }
 
   // Handle content changes from the editor
@@ -74,20 +74,6 @@
     if (!feed) return;
     queueUpdate('title', feed.title);
   }
-
-  // // Track when feed data changes from other users
-  // $effect(() => {
-  //   if (feed && feed.updatedAt) {
-  //     // Check if this update is more recent than our last saved version
-  //     if (lastSavedVersion && feed.updatedAt > lastSavedVersion && saving === false) {
-  //       // This indicates the content was updated by another user
-  //       lastUpdateByOther = `Content updated by another user at ${new Date(feed.updatedAt).toLocaleTimeString()}`;
-  //       setTimeout(() => {
-  //         lastUpdateByOther = null; // Clear the notification after a few seconds
-  //       }, 5000);
-  //     }
-  //   }
-  // });
 </script>
 
 <div class="container mx-auto py-8">

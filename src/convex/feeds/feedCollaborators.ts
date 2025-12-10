@@ -29,35 +29,50 @@ type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
 export async function hasFeedPermission(
   ctx: QueryCtx,
   feedId: Id<"feed">,
-  userId: string,
   requiredRole: FeedRole = "read",
 ): Promise<boolean> {
   // Get the feed
   const feed = await ctx.db.get(feedId);
   if (!feed) return false;
 
-  // If user is the owner, they have full access
-  if (feed.createdBy === userId) return true;
+  // Allow public read access without authentication
+  if (feed.public && requiredRole === "read") {
+    return true;
+  }
 
-  // If feed is public and role is read, allow access
-  if (feed.public && requiredRole === "read") return true;
+  // For non-public feeds or higher roles, require authentication
+  let user;
+  try {
+    user = await authComponent.getAuthUser(ctx);
+  } catch (error) {
+    // Not authenticated → no permission (except public read, already handled)
+    return false;
+  }
 
-  // Check if user is a collaborator with sufficient permissions
+  // Owner always has full access
+  if (feed.createdBy === user._id) {
+    return true;
+  }
+
+  // Look up collaborator using user._id
   const collaborator = await ctx.db
     .query("feedCollaborators")
-    .withIndex("feedId_userId", (q: any) =>
-      q.eq("feedId", feedId).eq("userId", userId),
+    .withIndex("feedId_userId", (q) =>
+      q.eq("feedId", feedId).eq("userId", user._id),
     )
     .unique();
 
-  if (!collaborator) return false;
+  if (!collaborator) {
+    return false;
+  }
 
-  // Check role hierarchy: admin > edit > read
+  // Role hierarchy check
   const roleHierarchy: Record<FeedRole, number> = {
     read: 1,
     edit: 2,
     admin: 3,
   };
+
   return (
     roleHierarchy[collaborator.role as FeedRole] >= roleHierarchy[requiredRole]
   );

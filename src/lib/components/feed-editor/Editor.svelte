@@ -18,6 +18,7 @@
 
 	onMount(async () => {
 		const { default: EditorJS } = await import('@editorjs/editorjs');
+		const { default: Paragraph } = await import('@editorjs/paragraph');
 		const { default: Header } = await import('@editorjs/header');
 		const { default: List } = await import('@editorjs/list');
 		const { default: Quote } = await import('@editorjs/quote');
@@ -40,6 +41,11 @@
 			holder: editorEl,
 			data: content,
 			tools: {
+			 paragraph: {
+      class: Paragraph,
+      preserveBlank: true,
+      inlineToolbar: true,
+    },
 				header: Header,
 				list: List,
 				checklist: Checklist,

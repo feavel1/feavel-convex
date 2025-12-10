@@ -130,20 +130,8 @@ export const getFeedById = query({
     feedId: v.id("feed"),
   },
   handler: async (ctx, args) => {
-    let user;
-    try {
-      user = await authComponent.getAuthUser(ctx);
-    } catch (error) {
-      // If authentication fails, user is not logged in
-      throw new Error("Authentication required");
-    }
+    const hasPermission = hasFeedPermission(ctx, args.feedId);
 
-    if (!user) {
-      throw new Error("Authentication required");
-    }
-
-    // Check permission
-    const hasPermission = await hasFeedPermission(ctx, args.feedId, user._id);
     if (!hasPermission) {
       throw new Error("You do not have permission to access this feed");
     } else {
@@ -249,11 +237,6 @@ export const getFeedBySlug = query({
     slug: v.string(),
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) {
-      throw new Error("Authentication required");
-    }
-
     // Get the feed by slug
     const feed = await ctx.db
       .query("feed")
@@ -265,7 +248,7 @@ export const getFeedBySlug = query({
     }
 
     // Check permission using the existing permission system
-    const hasPermission = await hasFeedPermission(ctx, feed._id, user._id);
+    const hasPermission = await hasFeedPermission(ctx, feed._id);
     if (!hasPermission) {
       throw new Error("You do not have permission to access this feed");
     }
@@ -329,12 +312,7 @@ export const updateFeed = mutation({
     }
 
     // Check if user has edit permission (owner or collaborator with edit/admin role)
-    const hasPermission = await hasFeedPermission(
-      ctx,
-      args.feedId,
-      user._id,
-      "edit",
-    );
+    const hasPermission = await hasFeedPermission(ctx, args.feedId, "edit");
     if (!hasPermission) {
       throw new Error("You do not have permission to update this feed");
     }

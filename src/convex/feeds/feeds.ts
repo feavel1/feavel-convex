@@ -130,7 +130,14 @@ export const getFeedById = query({
     feedId: v.id("feed"),
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
+    let user;
+    try {
+      user = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // If authentication fails, user is not logged in
+      throw new Error("Authentication required");
+    }
+
     if (!user) {
       throw new Error("Authentication required");
     }
@@ -139,14 +146,13 @@ export const getFeedById = query({
     const hasPermission = await hasFeedPermission(ctx, args.feedId, user._id);
     if (!hasPermission) {
       throw new Error("You do not have permission to access this feed");
+    } else {
+      const feed = await ctx.db.get(args.feedId);
+      if (!feed) {
+        throw new Error("Feed not found");
+      }
+      return feed;
     }
-
-    const feed = await ctx.db.get(args.feedId);
-    if (!feed) {
-      throw new Error("Feed not found");
-    }
-
-    return feed;
   },
 });
 

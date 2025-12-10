@@ -1,39 +1,40 @@
 <script lang="ts">
-  import type { PageData } from './$types';
-  import { useConvexClient } from 'convex-svelte';
+  import { useQuery, useConvexClient } from 'convex-svelte';
   import { api } from '$convex/_generated/api.js';
   import Editor from "$lib/components/feed-editor/Editor.svelte";
   import type { Id } from "$convex/_generated/dataModel";
 
-  // Get data from server-side load (no authentication needed client-side)
-  let { data } = $props<{ data: PageData }>();
+  let { params } = $props();
 
-  // Unified feed state - populated from server-side data
-  let feedState = $derived<{
-    _id: Id<"feed">;
-    title: string;
-    content: any;
-    slug: string;
-    type: string;
-    public: boolean;
-    createdBy: string;
-    createdAt: number;
-    updatedAt?: number;
-  } | null>(data.feed);
+  // Get feedId from URL params
+  let feedId: Id<"feed"> = params.feedId as Id<"feed">;
+
+  // First check authentication status
+  let authQuery = $derived(useQuery(api.auth.getCurrentUser, () => ({})));
+
+  // Only make the feed query if authentication is successful
+  let feedQuery = $derived(
+    authQuery.data ? useQuery(api.feeds.feeds.getFeedById, () => ({ feedId })) : null
+  );
+
+  let feed = $derived(feedQuery?.data);
 
   const convexClient = useConvexClient();
   let saving = $state<boolean>(false);
   let saveError = $state<string | null>(null);
+  let lastUpdateByOther = $state<string | null>(null);
+  let lastSavedVersion = $state<number | null>(null); // Track the version of the last saved content
+
+  // Track overall loading and error states
+  let overallLoading = $state<boolean>(true);
+  let overallError = $state<string | null>(null);
 
   // Debounce timer for auto-saving
   let saveTimeout: NodeJS.Timeout | null = $state(null);
 
   // Unified update function that handles all field changes
   function queueUpdate(field: any, value: any) {
-    if (!feedState) return;
-
-    // Update local state immediately for optimistic UI
-    (feedState as any)[field] = value;
+    if (!feed) return;
 
     // Clear any existing timeout
     if (saveTimeout) {
@@ -48,11 +49,16 @@
 
         // Single API call with the specific field update
         const updateData: any = {
-          feedId: feedState!._id,
+          feedId: feed!._id,
         };
         updateData[field] = value;
 
         await convexClient.mutation(api.feeds.feeds.updateFeed, updateData);
+
+        // Update the last saved version after successful save
+        if (field === 'content') {
+          lastSavedVersion = Date.now(); // Use timestamp as a simple version marker
+        }
       } catch (err: unknown) {
         const error = err as Error;
         saveError = error.message;
@@ -65,33 +71,90 @@
 
   // Handle content changes from the editor
   async function handleContentChange(newContent: any) {
-    if (!feedState) return;
+    if (!feed) return;
     queueUpdate('content', newContent);
   }
 
   // Handle title changes
   async function handleTitleChange() {
-    if (!feedState) return;
-    queueUpdate('title', feedState.title);
+    if (!feed) return;
+    queueUpdate('title', feed.title);
   }
+
+  // Track when feed data changes from other users
+  $effect(() => {
+    if (feed && feed.updatedAt) {
+      // Check if this update is more recent than our last saved version
+      if (lastSavedVersion && feed.updatedAt > lastSavedVersion && saving === false) {
+        // This indicates the content was updated by another user
+        lastUpdateByOther = `Content updated by another user at ${new Date(feed.updatedAt).toLocaleTimeString()}`;
+        setTimeout(() => {
+          lastUpdateByOther = null; // Clear the notification after a few seconds
+        }, 5000);
+      }
+    }
+  });
+
+  // Handle authentication state
+  $effect(() => {
+    if (authQuery.isLoading) {
+      overallLoading = true;
+      overallError = null;
+    } else if (authQuery.error) {
+      overallLoading = false;
+      overallError = "Authentication required. Please log in.";
+    } else if (authQuery.data) {
+      // Authentication successful, now check feed query
+      overallLoading = false;
+
+      // Only check feed query errors if feed query exists
+      if (feedQuery && feedQuery.error) {
+        overallError = feedQuery.error.message;
+      } else {
+        overallError = null;
+      }
+    }
+  });
+
+  // Handle feed query state if authentication is successful
+  $effect(() => {
+    if (authQuery.data && feedQuery) {
+      if (feedQuery.isLoading) {
+        overallLoading = true;
+      } else if (feedQuery.error && !overallError) {
+        overallError = feedQuery.error.message;
+      } else if (!feedQuery.isLoading && !overallError) {
+        overallLoading = false;
+      }
+    }
+  });
 </script>
 
 <div class="container mx-auto py-8">
-  {#if !data.feed}
+  {#if overallLoading}
+    <div class="text-center py-8">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      <p class="mt-2">Loading...</p>
+    </div>
+  {:else if overallError}
     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
       <strong class="font-bold">Error! </strong>
-      <span class="block sm:inline">{data.error || 'Feed not found'}</span>
+      <span class="block sm:inline">{overallError}</span>
     </div>
-  {:else if !feedState}
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-      <strong class="font-bold">Error! </strong>
-      <span class="block sm:inline">Feed data not available</span>
-    </div>
-  {:else}
+  {:else if feed}
+    {#if lastUpdateByOther}
+      <div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4 flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+        </svg>
+        <span><strong>Updated!</strong> {lastUpdateByOther}</span>
+      </div>
+    {/if}
+
     <div class="mb-6">
       <input
         type="text"
-        bind:value={feedState.title}
+        bind:value={feed.title}
         onblur={handleTitleChange}
         class="w-full text-2xl font-bold border-b border-gray-300 focus:outline-none focus:border-blue-500 p-2"
         placeholder="Feed title"
@@ -113,9 +176,16 @@
     </div>
 
     <Editor
-      content={feedState.content}
-      feedId={feedState._id!}
+      content={feed.content}
+      feedId={feed._id!}
       onChange={handleContentChange}
     />
+  {:else}
+    <div class="text-center py-8">
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <strong class="font-bold">Error! </strong>
+        <span class="block sm:inline">Unable to access feed</span>
+      </div>
+    </div>
   {/if}
 </div>

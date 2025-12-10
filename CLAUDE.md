@@ -9,12 +9,8 @@ This is a modern SvelteKit application with Convex for backend services and Bett
 ## Development Commands
 
 ### Common Commands
-- `bun run dev` - Start development server
-- `bun run dev -- --open` - Start development server and open in browser
-- `bun run build` - Create production build
-- `bun run preview` - Preview production build locally
-- `bun run check` - Run type checking
-- `bun run check:watch` - Run type checking in watch mode
+
+- `bun run check` - Run type checking ALWAYS PERFORM TYPE CHECK AFTER TASK COMPLETE
 
 ### Convex Commands
 - `bun x convex dev` - Run Convex in development mode

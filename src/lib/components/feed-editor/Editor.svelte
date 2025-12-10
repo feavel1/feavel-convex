@@ -78,10 +78,6 @@
 								if (!feedId) {
 									throw new Error('Feed ID is required for image uploads');
 								}
-								// Validate that the file is an image
-								if (!file.type.startsWith('image/')) {
-									throw new Error('File is not a valid image');
-								}
 								const result = await uploadFeedFileWithClient(convexClient, file, feedId);
 								if (!result) {
 									throw new Error('Image upload failed');
@@ -101,10 +97,6 @@
 							uploadByFile: async (file: File) => {
 								if (!feedId) {
 									throw new Error('Feed ID is required for audio uploads');
-								}
-								// Validate that the file is an audio file
-								if (!file.type.startsWith('audio/')) {
-									throw new Error('File is not a valid audio file');
 								}
 								const result = await uploadFeedFileWithClient(convexClient, file, feedId);
 								if (!result) {

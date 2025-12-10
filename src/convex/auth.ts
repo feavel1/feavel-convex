@@ -1,10 +1,10 @@
 import { createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convex } from "@convex-dev/better-auth/plugins";
+import { admin, anonymous } from "better-auth/plugins";
 import { components } from "./_generated/api";
 import { type DataModel } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 import { betterAuth } from "better-auth";
-import { admin } from "better-auth/plugins";
 import authSchema from "./betterAuth/schema";
 
 const siteUrl = process.env.SITE_URL!;
@@ -157,6 +157,7 @@ export const createAuth = (
       convex(),
       // Admin plugin for roles/impersonation/banning APIs
       admin(),
+      anonymous(),
     ],
   });
 };

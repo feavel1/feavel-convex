@@ -1,4 +1,11 @@
-import { internalMutation, mutation, query } from "../_generated/server";
+import {
+  internalMutation,
+  mutation,
+  query,
+  type QueryCtx,
+  type MutationCtx,
+  type ActionCtx,
+} from "../_generated/server";
 import { v } from "convex/values";
 import { authComponent } from "../auth";
 import type { Id } from "../_generated/dataModel";
@@ -6,9 +13,21 @@ import type { Id } from "../_generated/dataModel";
 // Type for feed roles
 export type FeedRole = "read" | "edit" | "admin";
 
-// Helper function to check if user has permission for a feed
+// Generic context type for helper functions that work across queries, mutations, and actions
+type GenericCtx = QueryCtx | MutationCtx | ActionCtx;
+
+/**
+ * Helper function to check if a user has permission for a feed.
+ * This function can be called from Convex queries, mutations, and actions.
+ *
+ * @param ctx - The Convex function context (QueryCtx, MutationCtx, or ActionCtx)
+ * @param feedId - The ID of the feed to check permissions for
+ * @param userId - The ID of the user to check permissions for
+ * @param requiredRole - The minimum role required (default: "read")
+ * @returns Promise<boolean> - True if the user has the required permission, false otherwise
+ */
 export async function hasFeedPermission(
-  ctx: any,
+  ctx: QueryCtx,
   feedId: Id<"feed">,
   userId: string,
   requiredRole: FeedRole = "read",
@@ -44,12 +63,25 @@ export async function hasFeedPermission(
   );
 }
 
-// Helper function to check if user has admin permission for a feed
+/**
+ * Helper function to check if a user has admin permission for a feed.
+ * This function can be called from Convex queries, mutations, and actions.
+ *
+ * @param ctx - The Convex function context (QueryCtx, MutationCtx, or ActionCtx)
+ * @param feedId - The ID of the feed to check admin permissions for
+ * @param userId - The ID of the user to check admin permissions for
+ * @returns Promise<boolean> - True if the user has admin permission, false otherwise
+ */
 export async function hasAdminPermission(
-  ctx: any,
+  ctx: QueryCtx,
   feedId: Id<"feed">,
   userId: string,
 ): Promise<boolean> {
+  // Validate context is properly defined
+  if (!ctx || !ctx.db) {
+    throw new Error("Invalid context: missing database access");
+  }
+
   // Get the feed
   const feed = await ctx.db.get(feedId);
   if (!feed) return false;

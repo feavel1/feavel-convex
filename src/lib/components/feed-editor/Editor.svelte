@@ -39,7 +39,6 @@
 		editor = new EditorJS({
 			holder: editorEl,
 			data: content,
-			readOnly,
 			tools: {
 				header: Header,
 				list: List,
@@ -102,7 +101,8 @@
 				color: ColorPicker
 			},
 			onReady: () => {
-				new Undo({ editor });
+		  const undo = new Undo({ editor });
+				undo.initialize(content);
 				new DragDrop(editor);
 
 			},

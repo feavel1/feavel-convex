@@ -261,10 +261,10 @@ export const getFeedBySlug = query({
 export const createFeed = mutation({
   args: {
     title: v.string(),
-    content: v.object({}),
+    content: v.any(),
     type: v.string(),
     public: v.boolean(),
-    meta: v.optional(v.object({})),
+    meta: v.optional(v.any()),
     coverFileId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
@@ -301,7 +301,7 @@ export const updateFeed = mutation({
     content: v.optional(v.any()),
     type: v.optional(v.string()),
     public: v.optional(v.boolean()),
-    meta: v.optional(v.object({})),
+    meta: v.optional(v.any()),
     coverFileId: v.optional(v.id("_storage")),
     updatedAt: v.optional(v.number()),
   },

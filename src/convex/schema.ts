@@ -21,8 +21,8 @@ const feed = defineTable({
   // public flag with default false
   public: v.optional(v.boolean()),
 
-  // meta as optional object (JSON equivalent)
-  meta: v.optional(v.object({})),
+  // meta as optional object (JSON equivalent) - allowing flexible meta objects
+  meta: v.optional(v.any()),
 
   // cover file ID referencing storage
   coverFileId: v.optional(v.id("_storage")),

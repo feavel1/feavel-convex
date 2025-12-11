@@ -29,7 +29,8 @@
   }
 
   // Props received from the server load function
-  let { feed }: PageData = $props();
+  const { data } = $props();
+  const { feed } = data;
 
   // Format date for display
   function formatDate(date: number): string {

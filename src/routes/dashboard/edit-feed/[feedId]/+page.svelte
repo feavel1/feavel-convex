@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { useQuery, useConvexClient } from 'convex-svelte';
   import { api } from '$convex/_generated/api.js';
   import Editor from "$lib/components/feed-editor/Editor.svelte";
@@ -14,15 +13,13 @@
   import { Button } from '$lib/components/ui/button/index.js';
   import { Upload } from '@lucide/svelte';
 
-
-
   let { params } = $props();
 
   // Get feedId from URL params reactively
   let feedId: Id<"feed"> = $derived(params.feedId as Id<"feed">);
 
   // Get the feed data for real-time editing
-  let feedQuery = $derived(useQuery(api.feeds.feeds.getFeedById, () => ({ feedId })));
+  let feedQuery = useQuery(api.feeds.feeds.getFeedById, () => ({ feedId }));
   let feed = $derived(feedQuery.data);
 
   // Create derived content for Select trigger
@@ -33,28 +30,19 @@
     { value: "custom", label: "Custom" }
   ];
 
-  // Local state for the select value to avoid binding issues
+  // Local state for the select value to avoid binding issues with reactive feed object
   let localFeedType = $derived<string | undefined>(feed?.type);
+
   // Use $derived to create trigger content
   const triggerContent = $derived(
     feedTypeOptions.find((option) => option.value === localFeedType)?.label ?? "Select a type"
   );
 
-  // Synchronize localFeedType changes back to the reactive feed object
+  // Update feed.type when localFeedType changes
   $effect(() => {
-    if (feed && localFeedType !== undefined && localFeedType !== feed.type) {
+    if (feed && localFeedType && localFeedType !== feed.type) {
       feed.type = localFeedType;
-      // Trigger the debounced save when feed type changes
       debouncedSave();
-    }
-  });
-
-  let localFeedTitle = $state<string | undefined>(feed?.title ?? undefined);
-
-  // Update localFeedTitle when feed.title changes
-  $effect(() => {
-    if (feed?.title !== undefined && localFeedTitle !== feed.title) {
-      localFeedTitle = feed.title;
     }
   });
 
@@ -93,26 +81,35 @@
     price: ''
   });
 
-  // Synchronize meta state with feed.meta when feed changes
+  function initializeMetaFromFeed() {
+    if (!feed?.meta) return;
+    const meta: any = feed.meta;
+
+    // Initialize article meta
+    articleMeta.keywords = Array.isArray(meta.keywords) ? meta.keywords.join(', ') : (typeof meta.keywords === 'string' ? meta.keywords : '');
+    articleMeta.author = meta.author || '';
+    articleMeta.links = Array.isArray(meta.links) ? meta.links.join(', ') : (typeof meta.links === 'string' ? meta.links : '');
+
+    // Initialize service meta
+    serviceMeta.links = Array.isArray(meta.service?.links) ? meta.service.links.join(', ') : (typeof meta.service?.links === 'string' ? meta.service.links : '');
+    serviceMeta.priceRange = meta.service?.priceRange || '';
+    serviceMeta.estimateTime = meta.service?.estimateTime || '';
+
+    // Initialize product meta
+    productMeta.links = Array.isArray(meta.product?.links) ? meta.product.links.join(', ') : (typeof meta.product?.links === 'string' ? meta.product.links : '');
+    productMeta.price = meta.product?.price || '';
+  }
+
+  // Initialize meta when feed is loaded (this will run once)
   $effect(() => {
-    if (feed?.meta) {
-      const meta: any = feed.meta;
-
-      // Initialize article meta
-      articleMeta.keywords = Array.isArray(meta.keywords) ? meta.keywords.join(', ') : (typeof meta.keywords === 'string' ? meta.keywords : '');
-      articleMeta.author = meta.author || '';
-      articleMeta.links = Array.isArray(meta.links) ? meta.links.join(', ') : (typeof meta.links === 'string' ? meta.links : '');
-
-      // Initialize service meta
-      serviceMeta.links = Array.isArray(meta.service?.links) ? meta.service.links.join(', ') : (typeof meta.service?.links === 'string' ? meta.service.links : '');
-      serviceMeta.priceRange = meta.service?.priceRange || '';
-      serviceMeta.estimateTime = meta.service?.estimateTime || '';
-
-      // Initialize product meta
-      productMeta.links = Array.isArray(meta.product?.links) ? meta.product.links.join(', ') : (typeof meta.product?.links === 'string' ? meta.product.links : '');
-      productMeta.price = meta.product?.price || '';
+    if (feed && !initializedMeta) {
+      initializeMetaFromFeed();
+      initializedMeta = true;
     }
   });
+
+  // Track whether meta has been initialized
+  let initializedMeta = $state<boolean>(false);
 
   // Convert meta objects to feed meta format and update (preserving other meta fields)
   function updateArticleMeta() {
@@ -170,18 +167,10 @@
     debouncedSave();
   }
 
-  function handleTitle (newTitle: string){
-      if (feed) {
-        feed.title = newTitle;
-        debouncedSave();}
-  }
-
-
   const convexClient = useConvexClient();
   let saving = $state<boolean>(false);
   let saveError = $state<string | null>(null);
   let coverImageUploading = $state<boolean>(false);
-  let lastUpdateByOther = $state<string | null>(null);
 
   // Track loading and error states
   let isLoading = $derived(feedQuery.isLoading);
@@ -213,13 +202,13 @@
         const updateData = {
           feedId: feed._id,
           title: feed.title,
-          type: localFeedType ?? feed.type, // Use localFeedType if available, fallback to original
+          type: feed.type,
           public: feed.public,
           meta: feed.meta,
           coverFileId: feed.coverFileId,
           content: feed.content
         };
-  console.log(updateData);
+
         await convexClient.mutation(api.feeds.feeds.updateFeed, updateData);
       } catch (err: unknown) {
         const error = err as Error;
@@ -229,7 +218,7 @@
         isCurrentlySaving = false;
         saving = false;
       }
-    }, 2000); // 2 second debounce
+    }, 3000); // 2 second debounce
   }
 
   // Simple function to handle meta updates with JSON validation for fallback
@@ -385,14 +374,6 @@
       <span class="block sm:inline">{error.message}</span>
     </div>
   {:else if feed}
-    {#if lastUpdateByOther}
-      <div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded relative mb-4 flex items-center">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-        </svg>
-        <span><strong>Updated!</strong> {lastUpdateByOther}</span>
-      </div>
-    {/if}
 
     <!-- Feed Settings Card -->
     <Card.Root class="mb-6">
@@ -404,7 +385,10 @@
       <Card.Content>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="space-y-2">
-            <Select.Root type="single" bind:value={localFeedType}>
+            <Select.Root
+              type="single"
+              bind:value={localFeedType}
+            >
               <Select.Trigger class="w-[180px]">
                 {triggerContent}
               </Select.Trigger>
@@ -698,10 +682,13 @@
     <div class="mb-6">
       <input
         type="text"
-        value={localFeedTitle}
+        value={feed?.title ?? ''}
                oninput={(e) => {
                  const newTitle = (e.target as HTMLInputElement).value;
-                 handleTitle(newTitle);
+                 if (feed) {
+                   feed.title = newTitle;
+                   debouncedSave();
+                 }
                }}
                class="w-full text-2xl font-bold border-b border-gray-300 focus:outline-none focus:border-blue-500 p-2"
                placeholder="Feed title"

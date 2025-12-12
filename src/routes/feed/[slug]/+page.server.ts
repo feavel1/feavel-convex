@@ -14,10 +14,13 @@ export const load: PageServerLoad = async ({ locals, params }) => {
   const client = createConvexHttpClient({ token: locals.token });
 
   try {
-    // Use Convex's server-side query to fetch the feed by slug
-    const feed = await client.query(api.feeds.feeds.getFeedBySlug, {
+    // Use Convex's server-side query to fetch the feed by slug using unified function
+    const result = await client.query(api.feeds.feeds.unifiedFeedQuery, {
       slug,
     });
+
+    // The unified function returns { feeds: [feed], nextCursor: undefined } for slug queries
+    const feed = result.feeds?.[0];
 
     // If feed is not found, return a 404 error
     if (!feed) {

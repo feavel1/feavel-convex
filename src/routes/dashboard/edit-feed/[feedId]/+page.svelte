@@ -18,9 +18,9 @@
   // Get feedId from URL params reactively
   let feedId: Id<"feed"> = $derived(params.feedId as Id<"feed">);
 
-  // Get the feed data for real-time editing
-  let feedQuery = useQuery(api.feeds.feeds.getFeedById, () => ({ feedId }));
-  let feed = $derived(feedQuery.data);
+  // Get the feed data for real-time editing using unified function
+  let feedQuery = useQuery(api.feeds.feeds.unifiedFeedQuery, () => ({ feedIds: [feedId] }));
+  let feed = $derived(feedQuery.data?.feeds?.[0]);
 
   // Create derived content for Select trigger
   const feedTypeOptions = [

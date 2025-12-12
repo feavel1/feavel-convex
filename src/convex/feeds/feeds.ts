@@ -35,322 +35,6 @@ async function ensureUniqueSlug(ctx: any, baseSlug: string): Promise<string> {
   return slug;
 }
 
-// Type for feed roles (though we'll use the imported one)
-// type FeedRole = "read" | "edit" | "admin";
-
-// Helper function to fetch feeds by multiple IDs efficiently
-async function getFeedsByIds(ctx: any, feedIds: string[]) {
-  if (feedIds.length === 0) return [];
-
-  // Since Convex doesn't support multi-get directly, we'll fetch them efficiently in batches
-  const feeds = [];
-  for (const feedId of feedIds) {
-    const feed = await ctx.db.get(feedId);
-    if (feed) {
-      feeds.push(feed);
-    }
-  }
-  return feeds;
-}
-
-// Query: Get all feeds (filtered by permissions) with optimized fetching
-export const getAllFeeds = query({
-  args: {
-    limit: v.optional(v.number()),
-    cursor: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) {
-      throw new Error("Authentication required");
-    }
-    const { limit = 20, cursor } = args;
-
-    // Get feeds created by the user
-    const userFeeds = await ctx.db
-      .query("feed")
-      .withIndex("created_by", (q) => q.eq("createdBy", user._id))
-      .collect();
-
-    // Get feeds where the user is a collaborator
-    const userCollaborations = await ctx.db
-      .query("feedCollaborators")
-      .withIndex("userId", (q) => q.eq("userId", user._id))
-      .collect();
-
-    const collaboratingFeedIds = userCollaborations.map((c) => c.feedId);
-
-    // Fetch collaborating feeds efficiently
-    const collaboratingFeeds = await getFeedsByIds(ctx, collaboratingFeedIds);
-
-    // For public feeds, we only include them if they're not already included in user feeds or collaborating feeds
-    const userAndCollaboratingFeedIds = new Set([
-      ...userFeeds.map((feed) => feed._id),
-      ...collaboratingFeeds.map((feed) => feed._id),
-    ]);
-
-    // Get additional public feeds that the user doesn't already have access to
-    const allPublicFeeds = await ctx.db
-      .query("feed")
-      .withIndex("public", (q) => q.eq("public", true))
-      .collect();
-
-    const additionalPublicFeeds = allPublicFeeds.filter(
-      (feed) => !userAndCollaboratingFeedIds.has(feed._id),
-    );
-
-    // Combine all feeds
-    const allFeeds = [
-      ...userFeeds,
-      ...collaboratingFeeds,
-      ...additionalPublicFeeds,
-    ];
-
-    // Sort by creation date (newest first)
-    allFeeds.sort((a, b) => b.createdAt - a.createdAt);
-
-    // Apply pagination
-    const startIndex = cursor ? parseInt(cursor) : 0;
-    const endIndex = startIndex + limit;
-    const paginatedFeeds = allFeeds.slice(startIndex, endIndex);
-
-    const nextCursor =
-      endIndex < allFeeds.length ? endIndex.toString() : undefined;
-
-    return {
-      feeds: paginatedFeeds,
-      nextCursor,
-    };
-  },
-});
-
-// Query: Get a single feed by ID with permission check
-export const getFeedById = query({
-  args: {
-    feedId: v.id("feed"),
-  },
-  handler: async (ctx, args) => {
-    const hasPermission = hasFeedPermission(ctx, args.feedId);
-
-    if (!hasPermission) {
-      throw new Error("You do not have permission to access this feed");
-    } else {
-      const feed = await ctx.db.get(args.feedId);
-      if (!feed) {
-        throw new Error("Feed not found");
-      }
-      return feed;
-    }
-  },
-});
-
-// Query: Get all feeds by a specific user
-export const getFeedsByUser = query({
-  args: {
-    userId: v.string(),
-    publicOnly: v.optional(v.boolean()),
-  },
-  handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) {
-      throw new Error("Authentication required");
-    }
-
-    // Check if the requesting user is the same as the requested user or has permission
-    if (user._id !== args.userId) {
-      // For now, only the user themselves can see their own feeds (unless public)
-      // For public feeds, other users can see them
-      if (args.publicOnly !== true) {
-        throw new Error("You can only view your own feeds");
-      }
-    }
-
-    let feeds;
-    if (args.publicOnly) {
-      feeds = await ctx.db
-        .query("feed")
-        .withIndex("created_by", (q: any) =>
-          q.eq("createdBy", args.userId).eq("public", true),
-        )
-        .collect();
-    } else {
-      feeds = await ctx.db
-        .query("feed")
-        .withIndex("created_by", (q: any) => q.eq("createdBy", args.userId))
-        .collect();
-    }
-
-    // Filter to only include public feeds if the requesting user is not the owner
-    const filteredFeeds =
-      user._id === args.userId ? feeds : feeds.filter((feed) => feed.public);
-
-    return filteredFeeds;
-  },
-});
-
-// Query: Get all public feeds
-export const getPublicFeeds = query({
-  args: {
-    limit: v.optional(v.number()),
-    cursor: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const { limit = 20, cursor } = args;
-
-    // For compound index [public, createdAt], we need to fully specify the public field
-    // and can then do range operations on createdAt
-    let queryBuilder = ctx.db
-      .query("feed")
-      .withIndex("public_created_at", (q) => {
-        if (cursor) {
-          const cursorTime = parseInt(cursor);
-          // For descending order, return entries with createdAt < cursorTime
-          return q.eq("public", true).lt("createdAt", cursorTime);
-        } else {
-          return q.eq("public", true);
-        }
-      })
-      .order("desc");
-
-    const results = await queryBuilder.take(limit + 1); // Get one extra to check for next page
-
-    let feeds = results;
-    let nextCursor = undefined;
-
-    if (results.length > limit) {
-      // Remove the extra item and set the next cursor
-      feeds = results.slice(0, limit);
-      // Use the creation time of the last item as the cursor
-      nextCursor = String(feeds[feeds.length - 1].createdAt);
-    }
-
-    return {
-      feeds,
-      nextCursor,
-    };
-  },
-});
-
-// Query: Get feeds by type with permission filtering
-export const getFeedsByType = query({
-  args: {
-    type: v.optional(v.string()),
-    limit: v.optional(v.number()),
-    cursor: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) {
-      throw new Error("Authentication required");
-    }
-
-    const { type, limit = 20, cursor } = args;
-
-    // Get feeds created by the user of specific type
-    let userFeeds;
-    if (type) {
-      userFeeds = await ctx.db
-        .query("feed")
-        .withIndex("created_by", (q) => q.eq("createdBy", user._id))
-        .collect();
-      // Filter by type after fetching
-      userFeeds = userFeeds.filter(feed => feed.type === type);
-    } else {
-      userFeeds = await ctx.db
-        .query("feed")
-        .withIndex("created_by", (q) => q.eq("createdBy", user._id))
-        .collect();
-    }
-
-    // Get feeds where the user is a collaborator of specific type
-    const userCollaborations = await ctx.db
-      .query("feedCollaborators")
-      .withIndex("userId", (q) => q.eq("userId", user._id))
-      .collect();
-
-    const collaboratingFeedIds = userCollaborations.map((c) => c.feedId);
-
-    // Fetch collaborating feeds efficiently
-    const collaboratingFeeds = await getFeedsByIds(ctx, collaboratingFeedIds)
-      .then(feeds => type ? feeds.filter(feed => feed.type === type) : feeds);
-
-    // For public feeds of specific type that the user doesn't already have access to
-    const userAndCollaboratingFeedIds = new Set([
-      ...userFeeds.map((feed) => feed._id),
-      ...collaboratingFeeds.map((feed) => feed._id),
-    ]);
-
-    // Get additional public feeds of specific type that the user doesn't already have access to
-    let allPublicFeeds;
-    if (type) {
-      allPublicFeeds = await ctx.db
-        .query("feed")
-        .withIndex("public", (q) => q.eq("public", true))
-        .collect();
-      // Filter by type after fetching
-      allPublicFeeds = allPublicFeeds.filter(feed => feed.type === type);
-    } else {
-      allPublicFeeds = await ctx.db
-        .query("feed")
-        .withIndex("public", (q) => q.eq("public", true))
-        .collect();
-    }
-
-    const additionalPublicFeeds = allPublicFeeds.filter(
-      (feed) => !userAndCollaboratingFeedIds.has(feed._id),
-    );
-
-    // Combine all feeds
-    const allFeeds = [
-      ...userFeeds,
-      ...collaboratingFeeds,
-      ...additionalPublicFeeds,
-    ];
-
-    // Sort by creation date (newest first)
-    allFeeds.sort((a, b) => b.createdAt - a.createdAt);
-
-    // Apply pagination if needed
-    const startIndex = cursor ? parseInt(cursor) : 0;
-    const endIndex = startIndex + limit;
-    const paginatedFeeds = allFeeds.slice(startIndex, endIndex);
-
-    const nextCursor =
-      endIndex < allFeeds.length ? endIndex.toString() : undefined;
-
-    return {
-      feeds: paginatedFeeds,
-      nextCursor,
-    };
-  },
-});
-
-// Query: Get a single feed by slug with permission check
-export const getFeedBySlug = query({
-  args: {
-    slug: v.string(),
-  },
-  handler: async (ctx, args) => {
-    // Get the feed by slug
-    const feed = await ctx.db
-      .query("feed")
-      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
-      .unique();
-
-    if (!feed) {
-      throw new Error("Feed not found");
-    }
-
-    // Check permission using the existing permission system
-    const hasPermission = await hasFeedPermission(ctx, feed._id);
-    if (!hasPermission) {
-      throw new Error("You do not have permission to access this feed");
-    }
-
-    return feed;
-  },
-});
-
 // Mutation: Create a new feed
 export const createFeed = mutation({
   args: {
@@ -476,5 +160,194 @@ export const deleteFeed = mutation({
     }
 
     return args.feedId;
+  },
+});
+
+// Unified query function for all feed queries with dynamic filtering and permission checking
+export const unifiedFeedQuery = query({
+  args: {
+    // Filtering options
+    feedIds: v.optional(v.array(v.id("feed"))), // Specific feed IDs to fetch
+    type: v.optional(v.string()), // Filter by feed type (article, product, service)
+    publicOnly: v.optional(v.boolean()), // Public feeds only
+    slug: v.optional(v.string()), // Single feed by slug
+
+    // Pagination
+    limit: v.optional(v.number()),
+    cursor: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { feedIds, type, publicOnly, slug, limit = 20, cursor } = args;
+
+    // Handle single feed by slug first
+    if (slug) {
+      const feed = await ctx.db
+        .query("feed")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique();
+
+      if (!feed) {
+        throw new Error("Feed not found");
+      }
+
+      // Only check permission if not explicitly requesting public only, or if feed is not public
+      let user = null;
+      if (publicOnly !== true) {
+        // Get the authenticated user if not publicOnly
+        try {
+          user = await authComponent.getAuthUser(ctx);
+        } catch (error) {
+          // Not authenticated
+          user = null;
+        }
+
+        // If not authenticated and feed is not public, deny access
+        if (!user && !feed.public) {
+          throw new Error("You do not have permission to access this feed");
+        }
+
+        // If authenticated, check permission using hasFeedPermission
+        if (user) {
+          const hasPermission = await hasFeedPermission(ctx, feed._id, "read");
+          if (!hasPermission) {
+            throw new Error("You do not have permission to access this feed");
+          }
+        } else if (!feed.public) {
+          // If not authenticated and feed is not public, deny access
+          throw new Error("You do not have permission to access this feed");
+        }
+      } else if (!feed.public) {
+        // If publicOnly is true but feed is not public, deny access
+        throw new Error("You do not have permission to access this feed");
+      }
+
+      return { feeds: [feed], nextCursor: undefined };
+    }
+
+    let results = [];
+
+    // For publicOnly queries, avoid user authentication entirely
+    if (publicOnly) {
+      // Public-only query with efficient indexing - no authentication needed
+      let queryBuilder = ctx.db
+        .query("feed")
+        .withIndex("public_created_at", (q) => {
+          if (cursor) {
+            const cursorTime = parseInt(cursor);
+            return q.eq("public", true).lt("createdAt", cursorTime);
+          } else {
+            return q.eq("public", true);
+          }
+        })
+        .order("desc");
+
+      results = await queryBuilder.take(limit + 1); // Get one extra to check for next page
+    } else {
+      // For non-public queries, get the authenticated user first
+      let user;
+      try {
+        user = await authComponent.getAuthUser(ctx);
+      } catch (error) {
+        // Not authenticated - only allow access to public feeds
+        user = null;
+      }
+
+      if (feedIds && feedIds.length > 0) {
+        // Fetch specific feeds and check permissions for each
+        for (const feedId of feedIds) {
+          const feed = await ctx.db.get(feedId);
+          if (feed) {
+            // Check permission if user is authenticated, allow public feeds
+            if (user) {
+              const hasPermission = await hasFeedPermission(ctx, feedId, "read");
+              if (hasPermission) {
+                results.push(feed);
+              }
+            } else {
+              // For unauthenticated users, only allow public feeds
+              if (feed.public) {
+                results.push(feed);
+              }
+            }
+          }
+        }
+      } else {
+        // Get all accessible feeds for the user
+        if (user) {
+          // For authenticated users, get all feeds they can access
+          const userFeeds = await ctx.db
+            .query("feed")
+            .withIndex("created_by", (q) => q.eq("createdBy", user._id))
+            .collect();
+
+          // Get public feeds
+          const publicFeeds = await ctx.db
+            .query("feed")
+            .withIndex("public", (q) => q.eq("public", true))
+            .collect();
+
+          // Get feeds where user is a collaborator
+          const userCollaborations = await ctx.db
+            .query("feedCollaborators")
+            .withIndex("userId", (q) => q.eq("userId", user._id))
+            .collect();
+
+          const collaborationFeedIds = userCollaborations.map(c => c.feedId);
+          const collaborationFeeds = [];
+          for (const feedId of collaborationFeedIds) {
+            const feed = await ctx.db.get(feedId);
+            if (feed) {
+              collaborationFeeds.push(feed);
+            }
+          }
+
+          // Combine all feeds, ensuring no duplicates
+          const allFeedsMap = new Map();
+          [...userFeeds, ...publicFeeds, ...collaborationFeeds].forEach(feed => {
+            if (feed) {
+              allFeedsMap.set(feed._id, feed);
+            }
+          });
+
+          results = Array.from(allFeedsMap.values());
+
+          // Sort by creation date (newest first) for authenticated user view
+          results.sort((a, b) => b.createdAt - a.createdAt);
+        } else {
+          // For unauthenticated users, only get public feeds
+          const queryBuilder = ctx.db
+            .query("feed")
+            .withIndex("public_created_at", (q) => {
+              if (cursor) {
+                const cursorTime = parseInt(cursor);
+                return q.eq("public", true).lt("createdAt", cursorTime);
+              } else {
+                return q.eq("public", true);
+              }
+            })
+            .order("desc");
+
+          results = await queryBuilder.take(limit + 1); // Get one extra to check for next page
+        }
+      }
+    }
+
+    let feeds = results;
+    let nextCursor = undefined;
+
+    // Handle pagination for authenticated user view (non-public, non-specific feed queries)
+    if (publicOnly || (feedIds && feedIds.length === 0) || !feedIds) {
+      if (results.length > limit) {
+        feeds = results.slice(0, limit);
+        nextCursor = String(feeds[feeds.length - 1].createdAt);
+      }
+    }
+
+    // Apply additional filters that can't be handled by indexes
+    if (type) {
+      feeds = feeds.filter((feed) => feed && feed.type === type);
+    }
+
+    return { feeds, nextCursor };
   },
 });

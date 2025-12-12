@@ -1,18 +1,19 @@
 <script lang="ts">
   import { api } from '$convex/_generated/api.js';
   import { useQuery } from 'convex-svelte';
+  import type { Id } from '$convex/_generated/dataModel';
   import * as Tabs from '$lib/components/ui/tabs/index.js';
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
 
   // Define feed type interface
   interface Feed {
-    _id: string;
-    title: string;
-    content: any;
-    slug: string;
-    type: string;
-    public: boolean;
+    _id: Id<'feed'>;
+    title?: string;
+    content?: any;
+    slug?: string;
+    type?: string;
+    public?: boolean;
     createdBy: string;
     createdAt: number;
     updatedAt?: number;
@@ -20,10 +21,10 @@
 
   // Define the feed type tabs
   const feedTypeTabs = [
-    { value: 'all', label: 'All Feeds', description: 'View all your feeds' },
-    { value: 'article', label: 'Articles', description: 'View your article feeds' },
-    { value: 'product', label: 'Products', description: 'View your product feeds' },
-    { value: 'service', label: 'Services', description: 'View your service feeds' },
+    { value: 'all', label: 'All Feeds', description: 'View all public feeds' },
+    { value: 'article', label: 'Articles', description: 'View public article feeds' },
+    { value: 'product', label: 'Products', description: 'View public product feeds' },
+    { value: 'service', label: 'Services', description: 'View public service feeds' },
   ];
 
   // Reactive state for the active tab
@@ -38,38 +39,35 @@
     });
   }
 
-  // Get feeds based on active tab
+  // Get feeds based on active tab using the unified query
   const feedsQuery = $derived(activeTab === 'all'
-    ? api.feeds.feeds.getAllFeeds
-    : api.feeds.feeds.getFeedsByType
+    ? api.feeds.feeds.unifiedFeedQuery
+    : api.feeds.feeds.unifiedFeedQuery
   );
 
   const feedsArgs = $derived(activeTab === 'all'
-    ? {}
-    : { type: activeTab }
+    ? { publicOnly: true }
+    : { publicOnly: true, type: activeTab }
   );
 
-  // Create a reactive function to handle the query properly
-  const getFeedsResponse = () => {
-    if (activeTab === 'all') {
-      return useQuery(api.feeds.feeds.getAllFeeds, {});
-    } else {
-      return useQuery(api.feeds.feeds.getFeedsByType, { type: activeTab });
-    }
-  };
+  // Create reactive query response that updates when activeTab changes
+  const feedsResponse = $derived(
+    activeTab === 'all'
+      ? useQuery(api.feeds.feeds.unifiedFeedQuery, { publicOnly: true })
+      : useQuery(api.feeds.feeds.unifiedFeedQuery, { publicOnly: true, type: activeTab })
+  );
 
-  const feedsResponse = getFeedsResponse();
   const feeds = $derived(feedsResponse.data?.feeds || []);
 </script>
 
 <svelte:head>
-  <title>Feeds | SaaS Template</title>
+  <title>Public Feeds | SaaS Template</title>
 </svelte:head>
 
 <div class="container mx-auto py-8 max-w-6xl">
   <div class="mb-8">
-    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Your Feeds</h1>
-    <p class="text-muted-foreground">Browse and manage your feeds organized by type.</p>
+    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Public Feeds</h1>
+    <p class="text-muted-foreground">Browse public feeds organized by type.</p>
   </div>
 
   <!-- Feed Type Tabs -->
@@ -146,7 +144,7 @@
             <Button onclick={() => {
               location.href = "/dashboard/edit-feed/new";
             }}>
-              Create New Feed
+              Create Public Feed
             </Button>
           </div>
         {/if}

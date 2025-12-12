@@ -13,6 +13,15 @@
   import { Button } from '$lib/components/ui/button/index.js';
   import { Upload } from '@lucide/svelte';
 
+  // Additional components for collaborator management
+  import * as Table from '$lib/components/ui/table/index.js';
+  import * as Dialog from '$lib/components/ui/dialog/index.js';
+  import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+  import { Badge } from '$lib/components/ui/badge/index.js';
+  import { toast } from 'svelte-sonner';
+  import { Search, UserPlus, Trash2, X } from '@lucide/svelte';
+    import { onMount } from 'svelte';
+
   let { params } = $props();
 
   // Get feedId from URL params reactively
@@ -179,6 +188,9 @@
   // Debounce timer for auto-saving
   let saveTimeout: NodeJS.Timeout | null = $state(null);
 
+  // Debounce timer for search
+  let searchTimeout: NodeJS.Timeout | null = $state(null);
+
   // Track if we're currently saving to prevent triggering additional saves during save operation
   let isCurrentlySaving = $state(false);
 
@@ -261,6 +273,188 @@
     } catch (error) {
       console.error('Invalid JSON in meta field:', error);
       // Don't update if JSON is invalid
+    }
+  }
+
+  // Collaborator management state variables
+  interface FeedCollaborator {
+    _id: string;
+    feedId: string;
+    userId: string;
+    role: 'read' | 'edit' | 'admin';
+    addedAt: number;
+    user?: {
+      name: string;
+      email: string;
+    } | null;
+  }
+
+  // State for collaborators
+  let collaborators = $state<FeedCollaborator[]>([]);
+  let collaboratorsQuery = $state<any>(null);
+  let currentUserQuery = $state<any>(null);
+  let currentUser = $derived(currentUserQuery?.data || null);
+  let isOwner = feed?.createdBy === currentUser?._id;
+
+  // Dialog state for adding collaborators
+  let showAddCollaboratorDialog = $state(false);
+  let searchEmail = $state('');
+  let searchResults = $state<any[]>([]);
+  let selectedRole = $state<'read' | 'edit' | 'admin'>('read');
+  let isSearching = $state(false);
+  let isAdding = $state(false);
+
+  // Alert dialog state for removing collaborators
+  let showRemoveDialog = $state(false);
+  let userToRemove = $state<{ id: string; name: string } | null>(null);
+
+  // Load current user and collaborators when feed is loaded
+  onMount(() => {
+    if (feed && feed._id) {
+      // Load current user
+      currentUserQuery = useQuery(api.auth.getCurrentUser, {});
+      // Load collaborators
+      loadCollaborators();
+    }
+  });
+
+  async function loadCollaborators() {
+    if (!feed || !feed._id) return;
+
+    try {
+      collaboratorsQuery = useQuery(api.feeds.feedCollaborators.getFeedCollaborators, () => ({ feedId: feed._id }));
+      if (collaboratorsQuery.data) {
+        collaborators = collaboratorsQuery.data;
+      }
+    } catch (error) {
+      console.error('Error loading collaborators:', error);
+      toast.error('Failed to load collaborators');
+    }
+  }
+
+  // Search for users to add as collaborators
+  async function searchUsers() {
+    if (!feed || !feed._id || searchEmail.length < 2) {
+      searchResults = [];
+      return;
+    }
+
+    isSearching = true;
+    try {
+      const results = await convexClient.query(
+        api.feeds.feedCollaborators.searchUsersForCollaboration,
+        {
+          feedId: feed._id,
+          emailQuery: searchEmail
+        }
+      );
+      searchResults = results;
+    } catch (error) {
+      console.error('Error searching users:', error);
+      toast.error('Failed to search users');
+      searchResults = [];
+    } finally {
+      isSearching = false;
+    }
+  }
+
+  // Handle adding a collaborator
+  async function handleAddCollaborator(selectedUserId: string) {
+    if (!feed || !feed._id) return;
+
+    isAdding = true;
+    try {
+      await convexClient.mutation(
+        api.feeds.feedCollaborators.addCollaborator,
+        {
+          feedId: feed._id,
+          userId: selectedUserId,
+          role: selectedRole
+        }
+      );
+
+      toast.success('Collaborator added successfully');
+      showAddCollaboratorDialog = false;
+      searchEmail = '';
+      searchResults = [];
+      selectedRole = 'read';
+      // Reload collaborators
+      await loadCollaborators();
+    } catch (error) {
+      console.error('Error adding collaborator:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to add collaborator');
+    } finally {
+      isAdding = false;
+    }
+  }
+
+  // Confirm remove collaborator
+  function confirmRemoveCollaborator(collaborator: FeedCollaborator) {
+    // Don't allow removing the feed owner
+    if (feed && collaborator.userId === feed.createdBy) {
+      toast.error('Cannot remove the feed owner');
+      return;
+    }
+
+    userToRemove = {
+      id: collaborator._id,
+      name: collaborator.user?.name || collaborator.userId
+    };
+    showRemoveDialog = true;
+  }
+
+  // Handle removing a collaborator
+  async function handleRemoveCollaborator() {
+    if (!userToRemove || !feed || !feed._id) return;
+
+    try {
+      const collaborator = collaborators.find(c => c._id === userToRemove?.id);
+      if (!collaborator) {
+        throw new Error('Collaborator not found');
+      }
+
+      await convexClient.mutation(
+        api.feeds.feedCollaborators.removeCollaborator,
+        {
+          feedId: feed._id,
+          userId: collaborator.userId
+        }
+      );
+
+      toast.success('Collaborator removed successfully');
+      showRemoveDialog = false;
+      userToRemove = null;
+      // Reload collaborators
+      await loadCollaborators();
+    } catch (error) {
+      console.error('Error removing collaborator:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to remove collaborator');
+    }
+  }
+
+  // Handle updating collaborator role
+  async function handleUpdateRole(collaboratorId: string, newRole: 'read' | 'edit' | 'admin') {
+    if (!feed || !feed._id) return;
+
+    try {
+      const collaborator = collaborators.find(c => c._id === collaboratorId);
+      if (!collaborator) return;
+
+      await convexClient.mutation(
+        api.feeds.feedCollaborators.updateCollaboratorRole,
+        {
+          feedId: feed._id,
+          userId: collaborator.userId,
+          role: newRole
+        }
+      );
+
+      toast.success('Role updated successfully');
+      // Reload collaborators
+      await loadCollaborators();
+    } catch (error) {
+      console.error('Error updating role:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update role');
     }
   }
 
@@ -676,6 +870,113 @@
             {/if}
           </div>
         </div>
+
+        <!-- Collaborators Section -->
+        {#if feed}
+          <div class="mt-6 pt-6 border-t">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-lg font-semibold">Collaborators</h3>
+                <p class="text-sm text-muted-foreground">Manage users who can access this feed</p>
+              </div>
+              {#if isOwner}
+                <Button
+                  variant="outline"
+                  onclick={() => showAddCollaboratorDialog = true}
+                >
+                  <UserPlus class="w-4 h-4 mr-2" />
+                  Add Collaborator
+                </Button>
+              {/if}
+            </div>
+
+            {#if collaboratorsQuery?.isLoading}
+              <div class="flex items-center justify-center py-8">
+                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+              </div>
+            {:else if collaboratorsQuery?.error}
+              <div class="text-red-500 text-sm">Error loading collaborators: {collaboratorsQuery.error.message}</div>
+            {:else if collaborators}
+              {#if collaborators.length === 0}
+                <div class="text-center py-8 text-muted-foreground">
+                  No collaborators added yet.
+                  {#if isOwner}
+                    <p class="mt-2">Add a collaborator to share access to this feed.</p>
+                  {/if}
+                </div>
+              {:else}
+                <div class="rounded-md border">
+                  <Table.Root>
+                    <Table.Header>
+                      <Table.Row>
+                        <Table.Head>Name</Table.Head>
+                        <Table.Head>Email</Table.Head>
+                        <Table.Head>Role</Table.Head>
+                        <Table.Head>Added</Table.Head>
+                        {#if isOwner}
+                          <Table.Head class="text-right">Actions</Table.Head>
+                        {/if}
+                      </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                      {#each collaborators as collaborator (collaborator._id)}
+                        <Table.Row>
+                          <Table.Cell class="font-medium">
+                            {collaborator.user?.name || 'Unknown User'}
+                          </Table.Cell>
+                          <Table.Cell>
+                            {collaborator.user?.email || collaborator.userId}
+                          </Table.Cell>
+                          <Table.Cell>
+                            {#if isOwner && collaborator.userId !== feed.createdBy}
+                              <Select.Root
+                                type="single"
+                                value={collaborator.role}
+                                onValueChange={(value) => {
+                                  if (value && (value === 'read' || value === 'edit' || value === 'admin')) {
+                                    handleUpdateRole(collaborator._id, value as 'read' | 'edit' | 'admin');
+                                  }
+                                }}
+                              >
+                                <Select.Trigger class="w-24">
+                                  {collaborator.role}
+                                </Select.Trigger>
+                                <Select.Content>
+                                  <Select.Item value="read" label="Read">Read</Select.Item>
+                                  <Select.Item value="edit" label="Edit">Edit</Select.Item>
+                                  <Select.Item value="admin" label="Admin">Admin</Select.Item>
+                                </Select.Content>
+                              </Select.Root>
+                            {:else}
+                              <Badge variant={collaborator.role === 'admin' ? 'default' :
+                                            collaborator.role === 'edit' ? 'secondary' : 'outline'}>
+                                {collaborator.role}
+                              </Badge>
+                            {/if}
+                          </Table.Cell>
+                          <Table.Cell>
+                            {new Date(collaborator.addedAt).toLocaleDateString()}
+                          </Table.Cell>
+                          {#if isOwner && collaborator.userId !== feed.createdBy}
+                            <Table.Cell class="text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onclick={() => confirmRemoveCollaborator(collaborator)}
+                              >
+                                <Trash2 class="w-4 h-4 text-destructive" />
+                              </Button>
+                            </Table.Cell>
+                          {/if}
+                        </Table.Row>
+                      {/each}
+                    </Table.Body>
+                  </Table.Root>
+                </div>
+              {/if}
+            {/if}
+          </div>
+        {/if}
       </Card.Content>
     </Card.Root>
 
@@ -727,4 +1028,129 @@
       </div>
     </div>
   {/if}
+
+  <!-- Add Collaborator Dialog -->
+  <Dialog.Root bind:open={showAddCollaboratorDialog}>
+    <Dialog.Content>
+      <Dialog.Header>
+        <Dialog.Title>Add Collaborator</Dialog.Title>
+        <Dialog.Description>
+          Search for a user by email to add them as a collaborator to this feed.
+        </Dialog.Description>
+      </Dialog.Header>
+      <div class="grid gap-4 py-4">
+        <div class="grid gap-2">
+          <Label for="email-search">User Email</Label>
+          <div class="flex gap-2">
+            <Input
+              id="email-search"
+              type="email"
+              bind:value={searchEmail}
+              placeholder="user@example.com"
+              oninput={() => {
+                // Debounce the search to avoid too many API calls
+                if(searchTimeout) clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                  searchUsers();
+                }, 300);
+              }}
+            />
+            {#if isSearching}
+              <div class="flex items-center">
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+              </div>
+            {/if}
+          </div>
+        </div>
+
+        {#if searchResults.length > 0}
+          <div class="border rounded-md">
+            <div class="p-2 border-b text-sm font-medium">Search Results</div>
+            {#each searchResults as user (user.id)}
+              <div class="flex items-center justify-between p-2 hover:bg-accent rounded-md cursor-pointer"
+                   role="button"
+                   tabindex="0"
+                   onclick={() => handleAddCollaborator(user.id)}
+                   onkeydown={(e) => {
+                     if (e.key === 'Enter' || e.key === ' ') {
+                       handleAddCollaborator(user.id);
+                     }
+                   }}>
+                <div>
+                  <div class="font-medium">{user.name}</div>
+                  <div class="text-sm text-muted-foreground">{user.email}</div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    handleAddCollaborator(user.id);
+                  }}
+                >
+                  Add
+                </Button>
+              </div>
+            {/each}
+          </div>
+        {/if}
+
+        <div class="grid gap-2">
+          <Label for="role-select">Role</Label>
+          <Select.Root type="single" bind:value={selectedRole}>
+            <Select.Trigger>
+              {selectedRole === 'read' ? 'Read' : selectedRole === 'edit' ? 'Edit' : 'Admin'}
+            </Select.Trigger>
+            <Select.Content>
+              <Select.Item value="read" label="Read access">
+                Read - Can view the feed
+              </Select.Item>
+              <Select.Item value="edit" label="Edit access">
+                Edit - Can view and edit the feed
+              </Select.Item>
+              <Select.Item value="admin" label="Admin access">
+                Admin - Can manage collaborators and settings
+              </Select.Item>
+            </Select.Content>
+          </Select.Root>
+        </div>
+      </div>
+      <Dialog.Footer>
+        <Button
+          variant="outline"
+          onclick={() => {
+            showAddCollaboratorDialog = false;
+            searchEmail = '';
+            searchResults = [];
+          }}
+        >
+          Cancel
+        </Button>
+      </Dialog.Footer>
+    </Dialog.Content>
+  </Dialog.Root>
+
+  <!-- Remove Collaborator Alert Dialog -->
+  <AlertDialog.Root bind:open={showRemoveDialog}>
+    <AlertDialog.Content>
+      <AlertDialog.Header>
+        <AlertDialog.Title>Remove Collaborator?</AlertDialog.Title>
+        <AlertDialog.Description>
+          Are you sure you want to remove <strong>{userToRemove?.name}</strong> from this feed?
+          They will lose access to this feed.
+        </AlertDialog.Description>
+      </AlertDialog.Header>
+      <AlertDialog.Footer>
+        <AlertDialog.Cancel onclick={() => showRemoveDialog = false}>
+          Cancel
+        </AlertDialog.Cancel>
+        <AlertDialog.Action
+          onclick={handleRemoveCollaborator}
+          class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        >
+          Remove
+        </AlertDialog.Action>
+      </AlertDialog.Footer>
+    </AlertDialog.Content>
+  </AlertDialog.Root>
 </div>

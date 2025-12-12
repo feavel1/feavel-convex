@@ -330,6 +330,39 @@ export const getFeedCollaborators = query({
   },
 });
 
+// Query function to search for users that can be added as collaborators
+// This function searches for users by email and excludes those already collaborators on the feed
+// NOTE: For this implementation, we're returning an empty array since direct BetterAuth user
+// access from Convex requires special setup. In a production implementation, this would need
+// to integrate with BetterAuth's user management APIs properly.
+export const searchUsersForCollaboration = query({
+  args: {
+    feedId: v.id("feed"),
+    emailQuery: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) {
+      throw new Error("Authentication required");
+    }
+
+    // Check if user has admin permission (owner only can add collaborators)
+    const feed = await ctx.db.get(args.feedId);
+    if (!feed) {
+      throw new Error("Feed not found");
+    }
+
+    // Only the feed owner can add collaborators, not even admin collaborators
+    if (feed.createdBy !== user._id) {
+      throw new Error("Only the feed owner can add collaborators");
+    }
+
+    // In a real implementation, this would search BetterAuth users
+    // For now, return an empty array since we can't access BetterAuth users directly from Convex
+    return [];
+  },
+});
+
 // Internal mutation to clean up feed collaborators when a user is deleted
 export const cleanupUserCollaborations = internalMutation({
   args: {

@@ -9,7 +9,7 @@
   //Auth
   import { createSvelteAuthClient } from '@mmailaender/convex-better-auth-svelte/svelte';
   import { authClient } from '$lib/auth-client';
-    import FloatingNavbar from '$lib/components/ui/floating-navbar/FloatingNavbar.svelte';
+  import FloatingNavbar from '$lib/components/ui/floating-navbar/FloatingNavbar.svelte';
 
   createSvelteAuthClient({ authClient });
 
@@ -41,6 +41,6 @@
 <Toaster />
 <FloatingNavbar {navItems} />
 
-<div class="container mx-auto py-8 max-w-6xl">
+<div class="container mx-auto py-8 max-w-6xl mt-6">
  {@render children?.()}
 </div>

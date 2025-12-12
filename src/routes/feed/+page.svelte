@@ -1,34 +1,20 @@
 <script lang="ts">
   import { api } from '$convex/_generated/api.js';
   import { useQuery } from 'convex-svelte';
-  import type { Id } from '$convex/_generated/dataModel';
+
   import * as Tabs from '$lib/components/ui/tabs/index.js';
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
 
-  // Define feed type interface
-  interface Feed {
-    _id: Id<'feed'>;
-    title?: string;
-    content?: any;
-    slug?: string;
-    type?: string;
-    public?: boolean;
-    createdBy: string;
-    createdAt: number;
-    updatedAt?: number;
-  }
-
   // Define the feed type tabs
   const feedTypeTabs = [
-    { value: 'all', label: 'All Feeds', description: 'View all public feeds' },
     { value: 'article', label: 'Articles', description: 'View public article feeds' },
     { value: 'product', label: 'Products', description: 'View public product feeds' },
     { value: 'service', label: 'Services', description: 'View public service feeds' },
   ];
 
   // Reactive state for the active tab
-  let activeTab = $state('all');
+  let activeTab = $state('article');
 
   // Format date for display
   function formatDate(date: number): string {
@@ -38,23 +24,9 @@
       day: 'numeric'
     });
   }
-
-  // Get feeds based on active tab using the unified query
-  const feedsQuery = $derived(activeTab === 'all'
-    ? api.feeds.feeds.unifiedFeedQuery
-    : api.feeds.feeds.unifiedFeedQuery
-  );
-
-  const feedsArgs = $derived(activeTab === 'all'
-    ? { publicOnly: true }
-    : { publicOnly: true, type: activeTab }
-  );
-
   // Create reactive query response that updates when activeTab changes
   const feedsResponse = $derived(
-    activeTab === 'all'
-      ? useQuery(api.feeds.feeds.unifiedFeedQuery, { publicOnly: true })
-      : useQuery(api.feeds.feeds.unifiedFeedQuery, { publicOnly: true, type: activeTab })
+    useQuery(api.feeds.feeds.unifiedFeedQuery, { publicOnly: true, type: activeTab })
   );
 
   const feeds = $derived(feedsResponse.data?.feeds || []);

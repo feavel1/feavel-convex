@@ -174,9 +174,10 @@ export const unifiedFeedQuery = query({
     slug: v.optional(v.string()),
     limit: v.optional(v.number()),
     cursor: v.optional(v.string()),
+    userId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { feedIds, type, publicOnly, slug, limit = 20, cursor } = args;
+    const { feedIds, type, publicOnly, slug, limit = 20, cursor, userId } = args;
     const isSingleRequest = !!slug || feedIds?.length === 1;
 
     // 1. HANDLE SINGLE FEED BY SLUG
@@ -221,8 +222,19 @@ export const unifiedFeedQuery = query({
     let finalFeeds: FeedDoc[] = [];
     let nextCursor: string | undefined = undefined;
 
+    // When userId is provided, check permissions to access that user's feeds
+    if (userId) {
+      // For now, only allow the current authenticated user to access their own feeds
+      // In the future, you could implement admin access or other permission systems
+      if (!user || user._id !== userId) {
+        // For security, only allow users to access their own feeds via userId parameter
+        // This could be expanded to allow access to other users' feeds based on permissions
+        throw new Error("You do not have permission to access this user's feeds");
+      }
+    }
+
     // 3. PUBLIC FEEDS MODE (optimized path)
-    if (isPublicQuery) {
+    if (isPublicQuery && !userId) {
       let queryBuilder = ctx.db
         .query("feed")
         .withIndex("public_created_at", (q) => {
@@ -244,7 +256,7 @@ export const unifiedFeedQuery = query({
         nextCursor = String(finalFeeds[finalFeeds.length - 1].createdAt);
       }
     }
-    // 4. AUTHENTICATED USER MODE (non-public)
+    // 4. AUTHENTICATED USER MODE (non-public) OR USER-SPECIFIC QUERY
     else {
       // 4a. SPECIFIC FEED IDS REQUEST
       if (feedIds?.length) {
@@ -255,6 +267,9 @@ export const unifiedFeedQuery = query({
 
           // Skip type-filtered feeds early
           if (type && feed.type !== type) return null;
+
+          // If userId is specified, check if feed belongs to that user
+          if (userId && feed.createdBy !== userId) return null;
 
           // Permission check (creator or collaborator)
           if (feed.createdBy === user!._id) return feed;
@@ -274,61 +289,84 @@ export const unifiedFeedQuery = query({
         });
         finalFeeds = validFeeds;
       }
-      // 4b. USER'S PERSONAL FEEDS (created + collaborations)
+      // 4b. USER-SPECIFIC FEEDS (created by specific user) OR USER'S PERSONAL FEEDS (created + collaborations)
       else {
-        // Get creator feeds
-        let creatorQuery = ctx.db
-          .query("feed")
-          .withIndex("created_by", (q) => q.eq("createdBy", user!._id))
-          .order("desc");
+        // If userId is specified, only fetch feeds created by that user
+        if (userId) {
+          // Get feeds created by the specified user
+          let creatorQuery = ctx.db
+            .query("feed")
+            .withIndex("created_by", (q) => q.eq("createdBy", userId))
+            .order("desc");
 
-        if (type) {
-          creatorQuery = creatorQuery.filter((q) =>
-            q.eq(q.field("type"), type),
+          if (type) {
+            creatorQuery = creatorQuery.filter((q) =>
+              q.eq(q.field("type"), type),
+            );
+          }
+
+          finalFeeds = await creatorQuery.take(limit + 1);
+          if (finalFeeds.length > limit) {
+            nextCursor = String(finalFeeds[limit].createdAt);
+            finalFeeds = finalFeeds.slice(0, limit);
+          }
+        }
+        // If no userId specified, fetch current user's feeds (created + collaborations)
+        else {
+          // Get creator feeds
+          let creatorQuery = ctx.db
+            .query("feed")
+            .withIndex("created_by", (q) => q.eq("createdBy", user!._id))
+            .order("desc");
+
+          if (type) {
+            creatorQuery = creatorQuery.filter((q) =>
+              q.eq(q.field("type"), type),
+            );
+          }
+
+          // Get collaboration feed IDs first
+          const collaborations = await ctx.db
+            .query("feedCollaborators")
+            .withIndex("userId", (q) => q.eq("userId", user!._id))
+            .collect();
+
+          const collaborationFeedIds = collaborations.map((c) => c.feedId);
+
+          // Batch fetch collaboration feeds
+          const collaborationFeeds = (
+            await Promise.all(
+              collaborationFeedIds.map((id) => ctx.db.get(id as Id<"feed">)),
+            )
+          ).filter(
+            (feed): feed is FeedDoc =>
+              feed !== null && (!type || feed.type === type),
           );
-        }
 
-        // Get collaboration feed IDs first
-        const collaborations = await ctx.db
-          .query("feedCollaborators")
-          .withIndex("userId", (q) => q.eq("userId", user!._id))
-          .collect();
+          // Merge feeds with deduplication
+          const allFeedsMap = new Map<string, FeedDoc>();
+          (await creatorQuery.collect()).forEach((feed) => {
+            allFeedsMap.set(feed._id, feed);
+          });
 
-        const collaborationFeedIds = collaborations.map((c) => c.feedId);
+          collaborationFeeds.forEach((feed) => {
+            allFeedsMap.set(feed._id, feed);
+          });
 
-        // Batch fetch collaboration feeds
-        const collaborationFeeds = (
-          await Promise.all(
-            collaborationFeedIds.map((id) => ctx.db.get(id as Id<"feed">)),
-          )
-        ).filter(
-          (feed): feed is FeedDoc =>
-            feed !== null && (!type || feed.type === type),
-        );
+          // Manual pagination with cursor support
+          let sortedFeeds = Array.from(allFeedsMap.values()).sort(
+            (a, b) => b.createdAt - a.createdAt,
+          );
 
-        // Merge feeds with deduplication
-        const allFeedsMap = new Map<string, FeedDoc>();
-        (await creatorQuery.collect()).forEach((feed) => {
-          allFeedsMap.set(feed._id, feed);
-        });
+          if (cursor) {
+            const cursorTime = parseInt(cursor);
+            sortedFeeds = sortedFeeds.filter((f) => f.createdAt < cursorTime);
+          }
 
-        collaborationFeeds.forEach((feed) => {
-          allFeedsMap.set(feed._id, feed);
-        });
-
-        // Manual pagination with cursor support
-        let sortedFeeds = Array.from(allFeedsMap.values()).sort(
-          (a, b) => b.createdAt - a.createdAt,
-        );
-
-        if (cursor) {
-          const cursorTime = parseInt(cursor);
-          sortedFeeds = sortedFeeds.filter((f) => f.createdAt < cursorTime);
-        }
-
-        finalFeeds = sortedFeeds.slice(0, limit);
-        if (sortedFeeds.length > limit) {
-          nextCursor = String(finalFeeds[finalFeeds.length - 1].createdAt);
+          finalFeeds = sortedFeeds.slice(0, limit);
+          if (sortedFeeds.length > limit) {
+            nextCursor = String(finalFeeds[finalFeeds.length - 1].createdAt);
+          }
         }
       }
     }

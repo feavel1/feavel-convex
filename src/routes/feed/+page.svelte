@@ -36,7 +36,7 @@
   <title>Public Feeds | SaaS Template</title>
 </svelte:head>
 
-<div class="container mx-auto py-8 max-w-6xl">
+
   <div class="mb-8">
     <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Public Feeds</h1>
     <p class="text-muted-foreground">Browse public feeds organized by type.</p>
@@ -44,7 +44,7 @@
 
   <!-- Feed Type Tabs -->
   <Tabs.Root bind:value={activeTab} class="space-y-6">
-    <Tabs.List class="grid w-full grid-cols-4">
+    <Tabs.List class="grid w-full grid-cols-3">
       {#each feedTypeTabs as tab}
         <Tabs.Trigger value={tab.value} class="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
           {tab.label}
@@ -123,4 +123,3 @@
       </Tabs.Content>
     {/each}
   </Tabs.Root>
-</div>

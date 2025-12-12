@@ -177,7 +177,15 @@ export const unifiedFeedQuery = query({
     userId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const { feedIds, type, publicOnly, slug, limit = 20, cursor, userId } = args;
+    const {
+      feedIds,
+      type,
+      publicOnly,
+      slug,
+      limit = 20,
+      cursor,
+      userId,
+    } = args;
     const isSingleRequest = !!slug || feedIds?.length === 1;
 
     // 1. HANDLE SINGLE FEED BY SLUG
@@ -229,7 +237,9 @@ export const unifiedFeedQuery = query({
       if (!user || user._id !== userId) {
         // For security, only allow users to access their own feeds via userId parameter
         // This could be expanded to allow access to other users' feeds based on permissions
-        throw new Error("You do not have permission to access this user's feeds");
+        throw new Error(
+          "You do not have permission to access this user's feeds",
+        );
       }
     }
 

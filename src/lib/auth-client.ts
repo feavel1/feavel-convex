@@ -1,6 +1,6 @@
 import { createAuthClient } from "better-auth/svelte";
 import { convexClient } from "@convex-dev/better-auth/client/plugins";
-import { anonymousClient } from "better-auth/client/plugins";
+import { anonymousClient, adminClient } from "better-auth/client/plugins";
 export const authClient = createAuthClient({
-  plugins: [convexClient(), anonymousClient()],
+  plugins: [convexClient(), adminClient(), anonymousClient()],
 });

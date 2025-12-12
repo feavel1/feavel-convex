@@ -99,9 +99,7 @@
                         <span class="text-yellow-600">Private</span>
                       {/if}
                     </span>
-                    <Button size="sm" variant="outline" onclick={() => {
-                      location.href = `/feed/${feed.slug}`;
-                    }}>
+                    <Button size="sm" variant="outline" href = "/feed/{feed.slug}">
                       View Details
                     </Button>
                   </div>
@@ -113,9 +111,7 @@
           <div class="text-center py-12">
             <h3 class="text-lg font-medium text-gray-900 mb-2">No {tab.label.toLowerCase()} found</h3>
             <p class="text-muted-foreground mb-4">{tab.description}</p>
-            <Button onclick={() => {
-              location.href = "/dashboard/edit-feed/new";
-            }}>
+            <Button href="/dashboard/edit-feed/new">
               Create Public Feed
             </Button>
           </div>

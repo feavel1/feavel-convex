@@ -389,7 +389,7 @@
               type="single"
               bind:value={localFeedType}
             >
-              <Select.Trigger class="w-[180px]">
+              <Select.Trigger class="w-45">
                 {triggerContent}
               </Select.Trigger>
               <Select.Content>

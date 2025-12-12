@@ -29,8 +29,8 @@
   }
 
   // Props received from the server load function
-  const { data } = $props();
-  const { feed } = data;
+  const props = $props();
+  const feed = $derived(props.data.feed);
 
   // Format date for display
   function formatDate(date: number): string {

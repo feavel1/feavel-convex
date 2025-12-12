@@ -231,6 +231,100 @@ export const getPublicFeeds = query({
   },
 });
 
+// Query: Get feeds by type with permission filtering
+export const getFeedsByType = query({
+  args: {
+    type: v.optional(v.string()),
+    limit: v.optional(v.number()),
+    cursor: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.getAuthUser(ctx);
+    if (!user) {
+      throw new Error("Authentication required");
+    }
+
+    const { type, limit = 20, cursor } = args;
+
+    // Get feeds created by the user of specific type
+    let userFeeds;
+    if (type) {
+      userFeeds = await ctx.db
+        .query("feed")
+        .withIndex("created_by", (q) => q.eq("createdBy", user._id))
+        .collect();
+      // Filter by type after fetching
+      userFeeds = userFeeds.filter(feed => feed.type === type);
+    } else {
+      userFeeds = await ctx.db
+        .query("feed")
+        .withIndex("created_by", (q) => q.eq("createdBy", user._id))
+        .collect();
+    }
+
+    // Get feeds where the user is a collaborator of specific type
+    const userCollaborations = await ctx.db
+      .query("feedCollaborators")
+      .withIndex("userId", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const collaboratingFeedIds = userCollaborations.map((c) => c.feedId);
+
+    // Fetch collaborating feeds efficiently
+    const collaboratingFeeds = await getFeedsByIds(ctx, collaboratingFeedIds)
+      .then(feeds => type ? feeds.filter(feed => feed.type === type) : feeds);
+
+    // For public feeds of specific type that the user doesn't already have access to
+    const userAndCollaboratingFeedIds = new Set([
+      ...userFeeds.map((feed) => feed._id),
+      ...collaboratingFeeds.map((feed) => feed._id),
+    ]);
+
+    // Get additional public feeds of specific type that the user doesn't already have access to
+    let allPublicFeeds;
+    if (type) {
+      allPublicFeeds = await ctx.db
+        .query("feed")
+        .withIndex("public", (q) => q.eq("public", true))
+        .collect();
+      // Filter by type after fetching
+      allPublicFeeds = allPublicFeeds.filter(feed => feed.type === type);
+    } else {
+      allPublicFeeds = await ctx.db
+        .query("feed")
+        .withIndex("public", (q) => q.eq("public", true))
+        .collect();
+    }
+
+    const additionalPublicFeeds = allPublicFeeds.filter(
+      (feed) => !userAndCollaboratingFeedIds.has(feed._id),
+    );
+
+    // Combine all feeds
+    const allFeeds = [
+      ...userFeeds,
+      ...collaboratingFeeds,
+      ...additionalPublicFeeds,
+    ];
+
+    // Sort by creation date (newest first)
+    allFeeds.sort((a, b) => b.createdAt - a.createdAt);
+
+    // Apply pagination if needed
+    const startIndex = cursor ? parseInt(cursor) : 0;
+    const endIndex = startIndex + limit;
+    const paginatedFeeds = allFeeds.slice(startIndex, endIndex);
+
+    const nextCursor =
+      endIndex < allFeeds.length ? endIndex.toString() : undefined;
+
+    return {
+      feeds: paginatedFeeds,
+      nextCursor,
+    };
+  },
+});
+
 // Query: Get a single feed by slug with permission check
 export const getFeedBySlug = query({
   args: {

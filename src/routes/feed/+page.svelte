@@ -3,9 +3,10 @@
   import { useQuery } from 'convex-svelte';
 
   import * as Tabs from '$lib/components/ui/tabs/index.js';
+  import * as Pagination from '$lib/components/ui/pagination/index.js';
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
-    import Separator from '$lib/components/ui/separator/separator.svelte';
+  import Separator from '$lib/components/ui/separator/separator.svelte';
 
   // Define the feed type tabs
   const feedTypeTabs = [
@@ -17,6 +18,12 @@
   // Reactive state for the active tab
   let activeTab = $state('article');
 
+  // Pagination state variables
+  let currentPage = $state(1);
+  const perPage = 6; // Fixed at 6 per user request
+  let feedsCursor = $state<string | null>(null);
+  let cursorMap = $state(new Map<number, string | null>());
+
   // Format date for display
   function formatDate(date: number): string {
     return new Date(date).toLocaleDateString('en-US', {
@@ -25,12 +32,50 @@
       day: 'numeric'
     });
   }
-  // Create reactive query response that updates when activeTab changes
+
+  // Create reactive query response that updates when activeTab changes or pagination state changes
   const feedsResponse = $derived(
-    useQuery(api.feeds.feeds.unifiedFeedQuery, { publicOnly: true, type: activeTab })
+    useQuery(api.feeds.feeds.unifiedFeedQuery, {
+      publicOnly: true,
+      type: activeTab,
+      limit: perPage,
+      cursor: feedsCursor || undefined
+    })
   );
 
   const feeds = $derived(feedsResponse.data?.feeds || []);
+  const nextCursor = $derived(feedsResponse.data?.nextCursor || null);
+  const totalCount = $derived(feedsResponse.data?.totalCount || 0);
+
+  // When a new cursor comes in, store it in our map
+  $effect(() => {
+    if (nextCursor && currentPage && !cursorMap.has(currentPage + 1)) {
+      cursorMap.set(currentPage + 1, nextCursor);
+    }
+  });
+
+  // When activeTab changes, reset pagination state
+  $effect(() => {
+    if (activeTab) {
+      currentPage = 1;
+      feedsCursor = null;
+      cursorMap = new Map<number, string | null>();
+    }
+  });
+
+  // When currentPage changes, update feedsCursor based on cursorMap
+  $effect(() => {
+    if (currentPage === 1) {
+      feedsCursor = null;
+    } else if (cursorMap.has(currentPage)) {
+      feedsCursor = cursorMap.get(currentPage) || null;
+    }
+  });
+
+  // Calculate pagination info
+  const totalPages = $derived(Math.ceil(totalCount / perPage));
+  const startIndex = $derived((currentPage - 1) * perPage + 1);
+  const endIndex = $derived(Math.min(currentPage * perPage, totalCount));
 </script>
 
 <svelte:head>
@@ -114,6 +159,39 @@
               </Card>
             {/each}
           </div>
+          <!-- Pagination -->
+          {#if totalCount > perPage}
+            <div class="mt-8 flex items-center justify-between">
+              <!-- <p class="text-sm text-muted-foreground">
+                Showing {startIndex} to {endIndex} of {totalCount} feeds
+              </p> -->
+              <Pagination.Root count={totalCount} perPage={perPage} bind:page={currentPage}>
+                {#snippet children({ pages, currentPage: activePage })}
+                  <Pagination.Content>
+                    <Pagination.Item>
+                      <Pagination.PrevButton />
+                    </Pagination.Item>
+                    {#each pages as page (page.key)}
+                      {#if page.type === "ellipsis"}
+                        <Pagination.Item>
+                          <Pagination.Ellipsis />
+                        </Pagination.Item>
+                      {:else}
+                        <Pagination.Item>
+                          <Pagination.Link {page} isActive={activePage === page.value}>
+                            {page.value}
+                          </Pagination.Link>
+                        </Pagination.Item>
+                      {/if}
+                    {/each}
+                    <Pagination.Item>
+                      <Pagination.NextButton />
+                    </Pagination.Item>
+                  </Pagination.Content>
+                {/snippet}
+              </Pagination.Root>
+            </div>
+          {/if}
         {:else}
           <div class="text-center py-12">
             <h3 class="text-lg font-medium text-gray-900 mb-2">No {tab.label.toLowerCase()} found</h3>

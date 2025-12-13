@@ -163,6 +163,7 @@ export const deleteFeed = mutation({
   },
 });
 
+
 type FeedDoc = Doc<"feed">;
 type FeedCollaboratorDoc = Doc<"feedCollaborators">;
 
@@ -381,9 +382,90 @@ export const unifiedFeedQuery = query({
       }
     }
 
+    // Calculate total count based on the same filters as the feed query
+    let totalCount: number;
+
+    // For public feeds mode
+    if (isPublicQuery && !userId) {
+      let countQuery = ctx.db.query("feed");
+      if (type) {
+        // Use the same type filtering as in the main query
+        const allPublicFeeds = await ctx.db
+          .query("feed")
+          .withIndex("public_created_at", (q) => q.eq("public", true))
+          .collect();
+        totalCount = allPublicFeeds.filter(feed => feed.type === type).length;
+      } else {
+        totalCount = (await ctx.db
+          .query("feed")
+          .withIndex("public", (q) => q.eq("public", true))
+          .collect()
+        ).length;
+      }
+    }
+    // For user-specific feeds (userId provided)
+    else if (userId) {
+      if (type) {
+        totalCount = (await ctx.db
+          .query("feed")
+          .withIndex("created_by", (q) => q.eq("createdBy", userId))
+          .filter((q) => q.eq(q.field("type"), type))
+          .collect()
+        ).length;
+      } else {
+        totalCount = (await ctx.db
+          .query("feed")
+          .withIndex("created_by", (q) => q.eq("createdBy", userId))
+          .collect()
+        ).length;
+      }
+    }
+    // For user's personal feeds (creator + collaborations) or specific feed IDs
+    else if (!feedIds?.length) {
+      // Count creator feeds
+      let creatorCountQuery = ctx.db.query("feed")
+        .withIndex("created_by", (q) => q.eq("createdBy", user!._id));
+      if (type) {
+        creatorCountQuery = creatorCountQuery.filter((q) => q.eq(q.field("type"), type));
+      }
+      const creatorCount = (await creatorCountQuery.collect()).length;
+
+      // Count collaboration feeds
+      const collaborations = await ctx.db
+        .query("feedCollaborators")
+        .withIndex("userId", (q) => q.eq("userId", user!._id))
+        .collect();
+      const collaborationFeedIds = new Set(collaborations.map(c => c.feedId));
+
+      // Get collaboration feeds and count with potential type filter
+      const collaborationFeeds = await Promise.all(
+        Array.from(collaborationFeedIds).map(id => ctx.db.get(id as Id<"feed">))
+      );
+      const collaborationCount = collaborationFeeds.filter(
+        feed => feed !== null && (!type || feed!.type === type)
+      ).length;
+
+      // Total is creator feeds + collaboration feeds (with deduplication)
+      const allFeedIds = new Set([
+        ...collaborationFeeds.filter((f): f is FeedDoc => f !== null).map(f => f._id),
+        ...(await ctx.db
+          .query("feed")
+          .withIndex("created_by", (q) => q.eq("createdBy", user!._id))
+          .collect()
+        ).map(f => f._id)
+      ]);
+
+      totalCount = allFeedIds.size;
+    }
+    // For specific feed IDs
+    else {
+      totalCount = finalFeeds.length;
+    }
+
     return {
       feeds: isSingleRequest ? finalFeeds.slice(0, 1) : finalFeeds,
       nextCursor: isSingleRequest ? undefined : nextCursor,
+      totalCount,
     };
   },
 });

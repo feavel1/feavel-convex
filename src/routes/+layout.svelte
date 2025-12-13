@@ -22,7 +22,7 @@
 <Toaster />
 <FloatingNavbar />
 
-<div class="container mx-auto py-8 max-w-6xl mt-6 px-2">
+<!-- <div class="container mx-auto py-8 max-w-6xl pt-6"> -->
  {@render children?.()}
-</div>
+<!-- </div> -->
 <!-- <LiquidGlass>ABC</LiquidGlass> -->

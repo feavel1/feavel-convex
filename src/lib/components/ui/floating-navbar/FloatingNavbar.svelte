@@ -89,9 +89,9 @@
 				</a>
 			{/each}
 			<Button href="/auth/sign-up"
-				class="relative rounded-full border border-neutral-500 px-4 py-2 text-sm font-medium  dark:border-white/[0.2] dark:text-white"
+				class="relative rounded-full border border-neutral-500 px-4 mx-2 text-sm font-medium  dark:border-white/[0.2] dark:text-white"
 			>
-				<span>Login</span>
+				<span>Account</span>
 				<!-- <span
 					class="absolute inset-x-0 -bottom-px mx-auto h-px w-1/2 bg-gradient-to-r from-transparent via-blue-500 to-transparent"
 				></span> -->

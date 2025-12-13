@@ -6,6 +6,7 @@
   import * as Card from "$lib/components/ui/card/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Badge } from "$lib/components/ui/badge/index.js";
+    import Separator from '$lib/components/ui/separator/separator.svelte';
 
   const convexClient = useConvexClient();
 
@@ -93,10 +94,10 @@
   }
 </script>
 
-<div class="container mx-auto py-8">
-  <div class="flex justify-between items-center mb-6">
+<div class="flex-1 space-y-6  py-8 p-6 md:p-10">
+  <div class="flex justify-between items-center mb-6 ">
     <div>
-      <h1 class="text-3xl font-bold tracking-tight">Manage Feeds</h1>
+      <h1 class="text-2xl font-bold tracking-tight">Edit Feeds</h1>
       <p class="text-muted-foreground">View and manage your feeds</p>
     </div>
     <Button
@@ -115,6 +116,9 @@
       {/if}
     </Button>
   </div>
+
+		<Separator />
+
 
   {#if feedsQuery.isLoading}
     <div class="flex justify-center items-center h-64">

@@ -221,30 +221,23 @@
 </svelte:head>
 
 <!-- Header -->
-<header
-	class="flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12"
->
-	<div class="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-		<Sidebar.Trigger class="-ml-1" />
-		<Separator orientation="vertical" class="mx-2 data-[orientation=vertical]:h-4" />
-		<h1 class="text-base font-medium">User Management</h1>
-		<div class="ml-auto">
-			<Button onclick={() => (showCreateDialog = true)}>
-				<UserPlus class="mr-2 h-4 w-4" />
-				Add User
-			</Button>
-		</div>
-	</div>
-</header>
+
 
 <!-- Main Content -->
 <div class="flex flex-1 flex-col">
 	<div class="flex-1 space-y-6 p-6 md:p-10">
+	  <div class="flex justify-between items-center mb-6 ">
 		<div>
-			<h2 class="text-2xl font-bold tracking-tight">Users</h2>
+			<h2 class="text-2xl font-bold tracking-tight">Admin</h2>
 			<p class="text-muted-foreground">Manage user accounts and permissions.</p>
 		</div>
 
+			<Button onclick={() => (showCreateDialog = true)}>
+				<UserPlus class="mr-2 h-4 w-4" />
+				Add User
+			</Button>
+
+</div>
 		<Separator />
 
 		<!-- Users Table -->

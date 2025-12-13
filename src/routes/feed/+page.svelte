@@ -5,6 +5,7 @@
   import * as Tabs from '$lib/components/ui/tabs/index.js';
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
+    import Separator from '$lib/components/ui/separator/separator.svelte';
 
   // Define the feed type tabs
   const feedTypeTabs = [
@@ -33,14 +34,20 @@
 </script>
 
 <svelte:head>
-  <title>Public Feeds | SaaS Template</title>
+  <title>Feeds | Feavel</title>
 </svelte:head>
 
 
-  <div class="mb-8">
-    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Public Feeds</h1>
-    <p class="text-muted-foreground">Browse public feeds organized by type.</p>
-  </div>
+<div class="flex flex-1 flex-col">
+	<div class="flex-1 space-y-6 p-6 md:p-10">
+		<div>
+			<h2 class="text-2xl font-bold tracking-tight">Public Feed</h2>
+			<p class="text-muted-foreground">Browse feed that is of your choice</p>
+		</div>
+
+		<Separator />
+
+
 
   <!-- Feed Type Tabs -->
   <Tabs.Root bind:value={activeTab} class="space-y-6">
@@ -119,3 +126,5 @@
       </Tabs.Content>
     {/each}
   </Tabs.Root>
+	</div>
+</div>

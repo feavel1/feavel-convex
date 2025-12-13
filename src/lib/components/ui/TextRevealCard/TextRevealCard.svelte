@@ -99,7 +99,7 @@
 			class=" overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,white,transparent)]"
 		>
 			<p
-				class="bg-[#323238] bg-clip-text py-10 text-base font-bold text-transparent sm:text-[3rem]"
+				class="bg-[#323238] bg-clip-text py-10 text-base  font-bold text-transparent sm:text-[3rem]"
 			>
 				{text}
 			</p>

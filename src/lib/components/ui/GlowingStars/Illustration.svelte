@@ -8,7 +8,7 @@
 
 	export let mouseEnter: boolean;
 
-	const stars = 108;
+	const stars = 216;
 	const columns = 18;
 	let glowingStars: number[] = [];
 
@@ -26,7 +26,7 @@
 </script>
 
 <div
-	class="h-48 w-full p-1"
+	class="h-90 w-full p-1"
 	style={`display: grid; grid-template-columns: repeat(${columns}, 1fr); gap: 1px;`}
 >
 	{#each [...Array(stars)] as star, starIdx (`matrix-col-${starIdx}}`)}

@@ -15,7 +15,8 @@
 		<Motion
 			let:motion
 			initial={{ opacity: 0.5, width: '15rem' }}
-			whileInView={{ opacity: 1, width: '30rem' }}
+			animate={{ opacity: 1, width: '30rem' }}
+
 			transition={{
 				delay: 0.3,
 				duration: 0.8,
@@ -40,7 +41,7 @@
 		<Motion
 			let:motion
 			initial={{ opacity: 0.5, width: '15rem' }}
-			whileInView={{ opacity: 1, width: '30rem' }}
+			animate={{ opacity: 1, width: '30rem' }}
 			transition={{
 				delay: 0.3,
 				duration: 0.8,
@@ -73,7 +74,7 @@
 		<Motion
 			let:motion
 			initial={{ width: '8rem' }}
-			whileInView={{ width: '16rem' }}
+			animate={{ width: '16rem' }}
 			transition={{
 				delay: 0.3,
 				duration: 0.8,
@@ -88,7 +89,7 @@
 		<Motion
 			let:motion
 			initial={{ width: '15rem' }}
-			whileInView={{ width: '30rem' }}
+			animate={{ width: '30rem' }}
 			transition={{
 				delay: 0.3,
 				duration: 0.8,

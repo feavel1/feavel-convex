@@ -11,7 +11,7 @@
 	on:mouseenter={() => (mouseEnter = true)}
 	on:mouseleave={() => (mouseEnter = false)}
 	class={cn(
-		'h-full max-h-[20rem] w-full max-w-md rounded-xl border border-[#eaeaea] bg-[linear-gradient(110deg,#333_0.6%,#222)] p-4 dark:border-neutral-600',
+		'h-[30rem] flex flex-col w-full max-w-md rounded-xl border border-[#eaeaea] bg-[linear-gradient(110deg,#333_0.6%,#222)] p-4 dark:border-neutral-600',
 		className
 	)}
 >

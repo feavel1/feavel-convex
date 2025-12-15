@@ -16,26 +16,26 @@
 
 	const items = [
 		{
-			title: 'The Dawn of Innovation',
-			description: 'Explore the birth of groundbreaking ideas and inventions.',
+			title: 'Web Dev Articles',
+			description: 'Recent works: am-was, feavel, svelte-stripe; Code snippets: RBAC, Editor.js, real-time chat app',
 			className: 'md:col-span-2',
 			icon: ClipboardCopy
 		},
 		{
-			title: 'The Digital Revolution',
-			description: 'Dive into the transformative power of technology.',
+			title: 'Music & Audio',
+			description: 'Artist music, film music, mixing & mastering, samples and tutorials',
 			className: 'md:col-span-1',
 			icon: File
 		},
 		{
-			title: 'The Art of Design',
-			description: 'Discover the beauty of thoughtful and functional design.',
+			title: 'Research & Language',
+			description: 'Law synergy research, language time research, grammar cases analysis',
 			className: 'md:col-span-1',
 			icon: FileSignature
 		},
 		{
-			title: 'The Power of Communication',
-			description: 'Understand the impact of effective communication in our lives.',
+			title: 'Tools & Setup',
+			description: 'AI prompts, Claude Code router, svelte-kit setup, proxy applications',
 			className: 'md:col-span-2',
 			icon: Table
 		}
@@ -78,19 +78,19 @@
 			use:motion
 			class="mt-8 bg-gradient-to-br from-slate-300 to-slate-500 bg-clip-text py-4 text-center text-4xl font-medium tracking-tight text-transparent md:text-7xl"
 		>
-			Build web 🕸️ <br /> the right way
+			Build web<br />with Фeavel
 		</h1>
 	</Motion>
 </LampEffect>
 
 
 
-<!-- Features Section -->
-<section class="py-20 bg-linear-to-b from-transparent to-slate-50 dark:to-slate-900/10" aria-labelledby="features-heading">
+<!-- Articles Section -->
+<section class="py-20 bg-linear-to-b from-transparent to-slate-50 dark:to-slate-900/10" aria-labelledby="articles-heading">
 	<div class="container mx-auto px-4">
 		<div class="text-center mb-16">
-			<h2 id="features-heading" class="text-3xl md:text-4xl font-bold mb-4">Key Features</h2>
-			<p class="text-muted-foreground max-w-2xl mx-auto">Discover the powerful features that make our platform stand out</p>
+			<h2 id="articles-heading" class="text-3xl md:text-4xl font-bold mb-4">Articles & Content</h2>
+			<p class="text-muted-foreground max-w-2xl mx-auto">Recent works, research, and tutorials across web dev, music, and research</p>
 		</div>
 
 		<BentoGrid className="max-w-4xl mx-auto md:auto-rows-[20rem]">
@@ -111,16 +111,16 @@
 <section class="py-20" aria-labelledby="highlights-heading">
 	<div class="container mx-auto px-4 max-w-4xl">
 		<div class="text-center mb-16">
-			<h2 id="highlights-heading" class="text-3xl md:text-4xl font-bold mb-4">Why Choose Us</h2>
-			<p class="text-muted-foreground max-w-2xl mx-auto">Experience the power of modern web technologies</p>
+			<h2 id="highlights-heading" class="text-3xl md:text-4xl font-bold mb-4">Featured Content</h2>
+			<p class="text-muted-foreground max-w-2xl mx-auto">Explore our diverse range of articles and resources</p>
 		</div>
 
 		<div class="flex flex-col items-center gap-6 justify-center md:flex-row">
 		 <GlowingStarsBackgroundCard className="max-w-sm">
-			<GlowingStarsTitle>Svelte + Convex</GlowingStarsTitle>
+			<GlowingStarsTitle>Articles & Insights</GlowingStarsTitle>
 			<div class="flex items-end justify-between">
 				<GlowingStarsDescription>
-					The power of full-stack to the frontend.
+					Discover web dev, music, and research content.
 				</GlowingStarsDescription>
 				<div class="flex h-8 w-8 items-center justify-center rounded-full bg-[hsla(0,0%,100%,.1)]">
 					<svg
@@ -149,10 +149,10 @@
 			<Icon class="absolute -right-3 -top-3 h-6 w-6 text-black dark:text-white" />
 			<Icon class="absolute -bottom-3 -right-3 h-6 w-6 text-black dark:text-white" />
 
-			<EvervaultCard text="hover" />
+			<EvervaultCard text="Explore" />
 
 			<h3 class="mt-6 text-lg font-medium text-black dark:text-white">
-				Hover over this card to reveal an awesome effect.
+				Discover our content collection.
 			</h3>
 			<!-- <p
 				class="mt-4 rounded-full border border-black/[0.2] px-3 py-1 text-sm font-light text-black dark:border-white/[0.2] dark:text-white"
@@ -167,7 +167,7 @@
 
 
 <!-- CTA Section -->
-<section class="py-20 bg-slate-50" aria-labelledby="cta-heading">
+<section class="py-20 bg-linear-to-t h-[80vh] from-transparent to-slate-50" aria-labelledby="cta-heading">
 	<div class="container mx-auto px-4 max-w-2xl">
 		<div class="text-center mb-16">
 			<h2 id="cta-heading" class="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
@@ -176,17 +176,18 @@
 
 		<div class="flex justify-center">
 			<TextRevealCard
-				text="Don't know what you like or want?"
-				revealText="Browse feed and see what you like!"
+				text="Explore web dev, music & research content"
+				revealText="Discover articles, services & products!"
 			>
-				<TextRevealCardTitle>Begin Your Adventure</TextRevealCardTitle>
-				<TextRevealCardDescription>Take the first step towards building amazing things.</TextRevealCardDescription>
+				<TextRevealCardTitle>Explore Our Content</TextRevealCardTitle>
+				<TextRevealCardDescription>Find resources on web development, music, and research.</TextRevealCardDescription>
 			</TextRevealCard>
 		</div>
 	</div>
 </section>
 
-<section class="relative py-20 md:py-32" aria-labelledby="hero-heading">
+		<Sparkles />
+<!-- <section class="relative py-20 md:py-32" aria-labelledby="hero-heading">
 	<div class="container mx-auto px-4">
 
 		<div class="flex h-[30rem] flex-col items-center justify-center mt-12">
@@ -206,6 +207,6 @@
 
 			</div>
 		</div>
-					<Sparkles />
+
 	</div>
-</section>
+</section> -->

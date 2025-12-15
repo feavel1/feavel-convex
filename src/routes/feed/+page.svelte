@@ -116,6 +116,7 @@
             <p class="text-red-500">Error loading feeds: {feedsResponse.error.message}</p>
           </div>
         {:else if feeds && feeds.length > 0}
+        <div class="min-h-[50vh]">
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {#each feeds as feed (feed._id)}
               <Card class="overflow-hidden hover:shadow-md transition-shadow">
@@ -159,6 +160,7 @@
               </Card>
             {/each}
           </div>
+        </div>
           <!-- Pagination -->
           {#if totalCount > perPage}
             <div class="mt-8 flex items-center justify-between">

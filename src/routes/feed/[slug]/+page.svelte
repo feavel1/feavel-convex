@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { PageData } from './$types';
+ 	import * as Code from '$lib/components/ui/code';
+
 
   // Define feed type
   interface Feed {
@@ -126,9 +128,11 @@
             {/if}
           </div>
         {:else if block.type === 'code'}
-          <pre class="bg-gray-100 p-4 rounded-lg mb-4 overflow-x-auto text-sm">
-            <code>{block.data.code}</code>
-          </pre>
+        <div class="w-full p-6">
+            <Code.Root lang={block.data.languageCode} code={block.data.code}>
+             <Code.CopyButton />
+            </Code.Root>
+        </div>
         {:else if block.type === 'quote'}
           <blockquote class="border-l-4 border-blue-500 pl-4 italic text-gray-700 my-6">
             {block.data.text}

@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { useConvexClient } from 'convex-svelte';
 	import { uploadFeedFileWithClient } from './editor';
+	// import {CodeTool} from './CodeTool.js';
 
 	let {
 		readOnly = false,
@@ -23,7 +24,9 @@
 		const { default: Header } = await import('@editorjs/header');
 		const { default: List } = await import('@editorjs/list');
 		const { default: Quote } = await import('@editorjs/quote');
-		const { default: CodeTool } = await import('@editorjs/code');
+		const { CodeTool } = await import('./CodeTool.js');
+
+
 		const { default: InlineCode } = await import('@editorjs/inline-code');
 		const { default: Delimiter } = await import('@editorjs/delimiter');
 		const { default: Table } = await import('@editorjs/table');

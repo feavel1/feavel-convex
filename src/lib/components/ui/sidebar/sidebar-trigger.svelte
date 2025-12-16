@@ -2,7 +2,7 @@
 	import { Button } from "$lib/components/ui/button/index.js";
 	import { cn } from "$lib/utils.js";
 	import PanelLeftIcon from "@lucide/svelte/icons/panel-left";
-	import type { ComponentProps } from "svelte";
+	import type { HTMLButtonAttributes } from "svelte/elements";
 	import { useSidebar } from "./context.svelte.js";
 
 	let {
@@ -10,9 +10,11 @@
 		class: className,
 		onclick,
 		...restProps
-	}: ComponentProps<typeof Button> & {
+	}: {
+		ref?: HTMLElement | null;
+		class?: string;
 		onclick?: (e: MouseEvent) => void;
-	} = $props();
+	} & HTMLButtonAttributes = $props();
 
 	const sidebar = useSidebar();
 </script>

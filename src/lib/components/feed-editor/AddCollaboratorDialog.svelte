@@ -133,7 +133,7 @@
               <Button
                 variant="outline"
                 size="sm"
-                onclick={(e) => {
+                onclick={(e: any) => {
                   e.stopPropagation();
                   handleAddCollaborator(user.id);
                 }}

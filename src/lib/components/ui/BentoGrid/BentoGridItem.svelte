@@ -4,7 +4,7 @@
 	export let className: string | undefined = undefined;
 	export let title: string | HTMLElement | undefined = undefined;
 	export let description: string | HTMLElement | undefined = undefined;
-	export let icon: HTMLElement | undefined = undefined;
+	export const icon: HTMLElement | undefined = undefined;
 </script>
 
 <div

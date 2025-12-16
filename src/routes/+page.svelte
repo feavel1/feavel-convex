@@ -61,26 +61,31 @@
 		];
 </script>
 
+<style>
+	@keyframes fadeInUp {
+		0% {
+			opacity: 0.5;
+			transform: translateY(100px);
+		}
+		100% {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.animate-fade-in-up {
+		animation: fadeInUp 0.8s cubic-bezier(0.455, 0.03, 0.515, 0.955) 0.3s both;
+	}
+</style>
+
 <!-- Hero Section -->
 <LampEffect>
-	<Motion
-		let:motion
-		initial={{ opacity: 0.5, y: 100 }}
-		animate={{ opacity: 1, y: 0 }}
-		transition={{
-			delay: 0.3,
-			duration: 0.8,
-			ease: 'easeInOut'
-		}}
+	<h1
+		id="hero-heading"
+		class="mt-8 bg-gradient-to-br from-slate-300 to-slate-500 bg-clip-text py-4 text-center text-4xl font-medium tracking-tight text-transparent md:text-7xl animate-fade-in-up"
 	>
-		<h1
-			id="hero-heading"
-			use:motion
-			class="mt-8 bg-gradient-to-br from-slate-300 to-slate-500 bg-clip-text py-4 text-center text-4xl font-medium tracking-tight text-transparent md:text-7xl"
-		>
-			Build web<br />with Фeavel
-		</h1>
-	</Motion>
+		Build web<br />with Фeavel
+	</h1>
 </LampEffect>
 
 

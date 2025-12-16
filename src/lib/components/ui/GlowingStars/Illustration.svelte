@@ -2,23 +2,20 @@
 	import { cn } from '$lib/utils';
 	import Glow from './Glow.svelte';
 	import Star from './Star.svelte';
-	import { AnimatePresence } from 'svelte-motion';
 	import { onDestroy, onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 
-	export let mouseEnter: boolean;
+	let { mouseEnter = false }: { mouseEnter: boolean } = $props();
 
 	const stars = 216;
 	const columns = 18;
-	let glowingStars: number[] = [];
+	let glowingStars = $state<number[]>([]);
 
-	// const highlightedStars = useRef<number[]>([]);
-	const highlightedStars = writable<number[]>([]);
-
-	onMount(() => {
+	// Generate random glowing stars
+	$effect(() => {
 		const interval = setInterval(() => {
-			$highlightedStars = Array.from({ length: 5 }, () => Math.floor(Math.random() * stars));
-			glowingStars = [...$highlightedStars];
+			const newHighlightedStars = Array.from({ length: 5 }, () => Math.floor(Math.random() * stars));
+			glowingStars = [...newHighlightedStars];
 		}, 3000);
 
 		return () => clearInterval(interval);
@@ -39,11 +36,9 @@
 			{#if mouseEnter}
 				<Glow delay={staticDelay} />
 			{/if}
-			<AnimatePresence show={true}>
-				{#if isGlowing}
-					<Glow {delay} />
-				{/if}
-			</AnimatePresence>
+			{#if isGlowing}
+				<Glow {delay} />
+			{/if}
 		</div>
 	{/each}
 </div>

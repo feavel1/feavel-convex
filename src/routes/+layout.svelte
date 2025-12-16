@@ -1,28 +1,38 @@
 <script lang="ts">
-  //Styles
-  import './layout.css';
-  import favicon from '$lib/assets/favicon.svg';
-  import { Toaster } from '$lib/components/ui/sonner';
+	import { page } from '$app/state';
+	import { locales, localizeHref } from '$lib/paraglide/runtime';
 
-  //Auth
-  import { createSvelteAuthClient } from '@mmailaender/convex-better-auth-svelte/svelte';
-  import { authClient } from '$lib/auth-client';
-  import FloatingNavbar from '$lib/components/ui/floating-navbar/FloatingNavbar.svelte';
+	//Styles
+	import './layout.css';
 
-  createSvelteAuthClient({ authClient });
+	import favicon from '$lib/assets/favicon.svg';
+	import { Toaster } from '$lib/components/ui/sonner';
 
-  let { children } = $props();
+	//Auth
+	import { createSvelteAuthClient } from '@mmailaender/convex-better-auth-svelte/svelte';
+
+	import { authClient } from '$lib/auth-client';
+	import FloatingNavbar from '$lib/components/ui/floating-navbar/FloatingNavbar.svelte';
+
+	createSvelteAuthClient({ authClient });
+
+	let { children } = $props();
 </script>
 
-<svelte:head>
-  <link rel="icon" href={favicon} />
-</svelte:head>
-
-
+<svelte:head><link rel="icon" href={favicon} /></svelte:head>
 <Toaster />
 <FloatingNavbar />
-
 <!-- <div class="container mx-auto py-8 max-w-6xl pt-6"> -->
- {@render children?.()}
+{@render children?.()}
 <!-- </div> -->
+
 <!-- <LiquidGlass>ABC</LiquidGlass> -->
+<div style="display:none">
+	{#each locales as locale}
+		<a
+			href={localizeHref(page.url.pathname, { locale })}
+		>
+			{locale}
+		</a>
+	{/each}
+</div>

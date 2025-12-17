@@ -89,7 +89,7 @@
 			<ModeSwitch />
 			<Button
 				href="/auth/sign-up"
-				class="relative mx-2 rounded-full border border-neutral-500 px-4 text-sm font-medium  dark:border-white/[0.2] dark:text-white"
+				class="relative mx-2 rounded-full border border-neutral-500 px-4 text-sm font-medium  dark:border-white/[0.2] "
 			>
 				<span>Account</span>
 				<!-- <span

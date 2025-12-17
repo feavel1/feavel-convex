@@ -15,8 +15,18 @@
     { value: 'service', label: 'Services', description: 'View public service feeds' },
   ];
 
-  // Reactive state for the active tab
+  // Define the language tabs based on available languages
+  const feedLanguageTabs = [
+    { value: 'en', label: 'English', description: 'View feeds in English' },
+    { value: 'zh', label: '中文', description: 'View feeds in Chinese' },
+    { value: 'ru', label: 'Русский', description: 'View feeds in Russian' },
+  ];
+
+  // Reactive state for the active tab (for type filtering)
   let activeTab = $state('article');
+
+  // Reactive state for the active language tab
+  let activeLanguageTab = $state('en');
 
   // Pagination state variables
   let currentPage = $state(1);
@@ -33,11 +43,12 @@
     });
   }
 
-  // Create reactive query response that updates when activeTab changes or pagination state changes
+  // Create reactive query response that updates when activeTab or activeLanguageTab changes or pagination state changes
   const feedsResponse = $derived(
     useQuery(api.feeds.feeds.unifiedFeedQuery, {
       publicOnly: true,
       type: activeTab,
+      language: activeLanguageTab,
       limit: perPage,
       cursor: feedsCursor || undefined
     })
@@ -57,6 +68,15 @@
   // When activeTab changes, reset pagination state
   $effect(() => {
     if (activeTab) {
+      currentPage = 1;
+      feedsCursor = null;
+      cursorMap = new Map<number, string | null>();
+    }
+  });
+
+  // When activeLanguageTab changes, reset pagination state
+  $effect(() => {
+    if (activeLanguageTab) {
       currentPage = 1;
       feedsCursor = null;
       cursorMap = new Map<number, string | null>();
@@ -93,6 +113,25 @@
 		<Separator />
 
 
+
+    <!-- Language Filter -->
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold">Filter by Language</h3>
+      <div class="flex flex-wrap gap-2">
+        {#each feedLanguageTabs as langTab}
+          <button
+            class={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              activeLanguageTab === langTab.value
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+            onclick={() => activeLanguageTab = langTab.value}
+          >
+            {langTab.label}
+          </button>
+        {/each}
+      </div>
+    </div>
 
   <!-- Feed Type Tabs -->
   <Tabs.Root bind:value={activeTab} class="space-y-6">

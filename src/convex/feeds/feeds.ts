@@ -41,6 +41,7 @@ export const createFeed = mutation({
     title: v.string(),
     content: v.any(),
     type: v.string(),
+    language: v.optional(v.string()),
     public: v.boolean(),
     meta: v.optional(v.any()),
     coverFileId: v.optional(v.id("_storage")),
@@ -61,6 +62,7 @@ export const createFeed = mutation({
       slug: uniqueSlug,
       content: args.content || {},
       type: args.type || "article",
+      language: args.language,
       public: args.public || false,
       meta: args.meta,
       coverFileId: args.coverFileId,
@@ -78,6 +80,7 @@ export const updateFeed = mutation({
     title: v.optional(v.string()),
     content: v.optional(v.any()),
     type: v.optional(v.string()),
+    language: v.optional(v.string()),
     public: v.optional(v.boolean()),
     meta: v.optional(v.any()),
     coverFileId: v.optional(v.id("_storage")),
@@ -106,6 +109,7 @@ export const updateFeed = mutation({
     if (args.title !== undefined) updates.title = args.title;
     if (args.content !== undefined) updates.content = args.content;
     if (args.type !== undefined) updates.type = args.type;
+    if (args.language !== undefined) updates.language = args.language;
     if (args.public !== undefined) updates.public = args.public;
     if (args.meta !== undefined) updates.meta = args.meta;
     if (args.coverFileId !== undefined) updates.coverFileId = args.coverFileId;
@@ -163,7 +167,6 @@ export const deleteFeed = mutation({
   },
 });
 
-
 type FeedDoc = Doc<"feed">;
 type FeedCollaboratorDoc = Doc<"feedCollaborators">;
 
@@ -171,6 +174,7 @@ export const unifiedFeedQuery = query({
   args: {
     feedIds: v.optional(v.array(v.id("feed"))),
     type: v.optional(v.string()),
+    language: v.optional(v.string()),
     publicOnly: v.optional(v.boolean()),
     slug: v.optional(v.string()),
     limit: v.optional(v.number()),
@@ -181,6 +185,7 @@ export const unifiedFeedQuery = query({
     const {
       feedIds,
       type,
+      language,
       publicOnly,
       slug,
       limit = 20,
@@ -246,19 +251,46 @@ export const unifiedFeedQuery = query({
 
     // 3. PUBLIC FEEDS MODE (optimized path)
     if (isPublicQuery && !userId) {
-      let queryBuilder = ctx.db
-        .query("feed")
-        .withIndex("public_created_at", (q) => {
-          if (cursor) {
-            return q.eq("public", true).lt("createdAt", parseInt(cursor));
-          }
-          return q.eq("public", true);
-        })
-        .order("desc");
+      let queryBuilder;
 
-      // Apply type filter after index query
-      if (type) {
-        queryBuilder = queryBuilder.filter((q) => q.eq(q.field("type"), type));
+      // Use more efficient index when both public and language are specified
+      if (language) {
+        queryBuilder = ctx.db
+          .query("feed")
+          .withIndex("by_public_language_created_at", (q) => {
+            if (cursor) {
+              return q
+                .eq("public", true)
+                .eq("language", language)
+                .lt("createdAt", parseInt(cursor));
+            }
+            return q.eq("public", true).eq("language", language);
+          })
+          .order("desc");
+
+        // Apply type filter after index query if needed
+        if (type) {
+          queryBuilder = queryBuilder.filter((q) =>
+            q.eq(q.field("type"), type),
+          );
+        }
+      } else {
+        queryBuilder = ctx.db
+          .query("feed")
+          .withIndex("public_created_at", (q) => {
+            if (cursor) {
+              return q.eq("public", true).lt("createdAt", parseInt(cursor));
+            }
+            return q.eq("public", true);
+          })
+          .order("desc");
+
+        // Apply type filter after index query if needed
+        if (type) {
+          queryBuilder = queryBuilder.filter((q) =>
+            q.eq(q.field("type"), type),
+          );
+        }
       }
 
       const results = await queryBuilder.take(limit + 1);
@@ -278,6 +310,9 @@ export const unifiedFeedQuery = query({
 
           // Skip type-filtered feeds early
           if (type && feed.type !== type) return null;
+
+          // Skip language-filtered feeds early
+          if (language && feed.language !== language) return null;
 
           // If userId is specified, check if feed belongs to that user
           if (userId && feed.createdBy !== userId) return null;
@@ -316,6 +351,12 @@ export const unifiedFeedQuery = query({
             );
           }
 
+          if (language) {
+            creatorQuery = creatorQuery.filter((q) =>
+              q.eq(q.field("language"), language),
+            );
+          }
+
           finalFeeds = await creatorQuery.take(limit + 1);
           if (finalFeeds.length > limit) {
             nextCursor = String(finalFeeds[limit].createdAt);
@@ -336,6 +377,12 @@ export const unifiedFeedQuery = query({
             );
           }
 
+          if (language) {
+            creatorQuery = creatorQuery.filter((q) =>
+              q.eq(q.field("language"), language),
+            );
+          }
+
           // Get collaboration feed IDs first
           const collaborations = await ctx.db
             .query("feedCollaborators")
@@ -351,7 +398,9 @@ export const unifiedFeedQuery = query({
             )
           ).filter(
             (feed): feed is FeedDoc =>
-              feed !== null && (!type || feed.type === type),
+              feed !== null &&
+              (!type || feed.type === type) &&
+              (!language || feed.language === language),
           );
 
           // Merge feeds with deduplication
@@ -388,45 +437,91 @@ export const unifiedFeedQuery = query({
     // For public feeds mode
     if (isPublicQuery && !userId) {
       let countQuery = ctx.db.query("feed");
-      if (type) {
+      if (type && language) {
+        // Use the same type and language filtering as in the main query
+        const allPublicFeeds = await ctx.db
+          .query("feed")
+          .withIndex("public_created_at", (q) => q.eq("public", true))
+          .collect();
+        totalCount = allPublicFeeds.filter(
+          (feed) => feed.type === type && feed.language === language,
+        ).length;
+      } else if (type) {
         // Use the same type filtering as in the main query
         const allPublicFeeds = await ctx.db
           .query("feed")
           .withIndex("public_created_at", (q) => q.eq("public", true))
           .collect();
-        totalCount = allPublicFeeds.filter(feed => feed.type === type).length;
-      } else {
-        totalCount = (await ctx.db
+        totalCount = allPublicFeeds.filter((feed) => feed.type === type).length;
+      } else if (language) {
+        // Use the same language filtering as in the main query
+        const allPublicFeeds = await ctx.db
           .query("feed")
-          .withIndex("public", (q) => q.eq("public", true))
-          .collect()
+          .withIndex("public_created_at", (q) => q.eq("public", true))
+          .collect();
+        totalCount = allPublicFeeds.filter(
+          (feed) => feed.language === language,
+        ).length;
+      } else {
+        totalCount = (
+          await ctx.db
+            .query("feed")
+            .withIndex("public", (q) => q.eq("public", true))
+            .collect()
         ).length;
       }
     }
     // For user-specific feeds (userId provided)
     else if (userId) {
-      if (type) {
-        totalCount = (await ctx.db
-          .query("feed")
-          .withIndex("created_by", (q) => q.eq("createdBy", userId))
-          .filter((q) => q.eq(q.field("type"), type))
-          .collect()
+      if (type && language) {
+        totalCount = (
+          await ctx.db
+            .query("feed")
+            .withIndex("created_by", (q) => q.eq("createdBy", userId))
+            .filter((q) => q.eq(q.field("type"), type))
+            .filter((q) => q.eq(q.field("language"), language))
+            .collect()
+        ).length;
+      } else if (type) {
+        totalCount = (
+          await ctx.db
+            .query("feed")
+            .withIndex("created_by", (q) => q.eq("createdBy", userId))
+            .filter((q) => q.eq(q.field("type"), type))
+            .collect()
+        ).length;
+      } else if (language) {
+        totalCount = (
+          await ctx.db
+            .query("feed")
+            .withIndex("created_by", (q) => q.eq("createdBy", userId))
+            .filter((q) => q.eq(q.field("language"), language))
+            .collect()
         ).length;
       } else {
-        totalCount = (await ctx.db
-          .query("feed")
-          .withIndex("created_by", (q) => q.eq("createdBy", userId))
-          .collect()
+        totalCount = (
+          await ctx.db
+            .query("feed")
+            .withIndex("created_by", (q) => q.eq("createdBy", userId))
+            .collect()
         ).length;
       }
     }
     // For user's personal feeds (creator + collaborations) or specific feed IDs
     else if (!feedIds?.length) {
       // Count creator feeds
-      let creatorCountQuery = ctx.db.query("feed")
+      let creatorCountQuery = ctx.db
+        .query("feed")
         .withIndex("created_by", (q) => q.eq("createdBy", user!._id));
       if (type) {
-        creatorCountQuery = creatorCountQuery.filter((q) => q.eq(q.field("type"), type));
+        creatorCountQuery = creatorCountQuery.filter((q) =>
+          q.eq(q.field("type"), type),
+        );
+      }
+      if (language) {
+        creatorCountQuery = creatorCountQuery.filter((q) =>
+          q.eq(q.field("language"), language),
+        );
       }
       const creatorCount = (await creatorCountQuery.collect()).length;
 
@@ -435,24 +530,44 @@ export const unifiedFeedQuery = query({
         .query("feedCollaborators")
         .withIndex("userId", (q) => q.eq("userId", user!._id))
         .collect();
-      const collaborationFeedIds = new Set(collaborations.map(c => c.feedId));
+      const collaborationFeedIds = new Set(collaborations.map((c) => c.feedId));
 
-      // Get collaboration feeds and count with potential type filter
+      // Get collaboration feeds and count with potential type and language filters
       const collaborationFeeds = await Promise.all(
-        Array.from(collaborationFeedIds).map(id => ctx.db.get(id as Id<"feed">))
+        Array.from(collaborationFeedIds).map((id) =>
+          ctx.db.get(id as Id<"feed">),
+        ),
       );
       const collaborationCount = collaborationFeeds.filter(
-        feed => feed !== null && (!type || feed!.type === type)
+        (feed) =>
+          feed !== null &&
+          (!type || feed!.type === type) &&
+          (!language || feed!.language === language),
       ).length;
 
       // Total is creator feeds + collaboration feeds (with deduplication)
-      const allFeedIds = new Set([
-        ...collaborationFeeds.filter((f): f is FeedDoc => f !== null).map(f => f._id),
-        ...(await ctx.db
+      // Apply same filters to both sets to ensure accurate counts
+      const filteredCreatorFeeds = (
+        await ctx.db
           .query("feed")
           .withIndex("created_by", (q) => q.eq("createdBy", user!._id))
           .collect()
-        ).map(f => f._id)
+      ).filter(
+        (feed) =>
+          (!type || feed.type === type) &&
+          (!language || feed.language === language),
+      );
+
+      const allFeedIds = new Set([
+        ...collaborationFeeds
+          .filter(
+            (f): f is FeedDoc =>
+              f !== null &&
+              (!type || f.type === type) &&
+              (!language || f.language === language),
+          )
+          .map((f) => f._id),
+        ...filteredCreatorFeeds.map((f) => f._id),
       ]);
 
       totalCount = allFeedIds.size;

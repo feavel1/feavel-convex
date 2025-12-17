@@ -24,7 +24,7 @@
   let currentUserQuery = useQuery(api.auth.getCurrentUser, {});
   let feed = $derived(feedQuery.data?.feeds?.[0]);
   let currentUser = $derived(currentUserQuery.data);
-  let isOwner = $derived(!!feed && !!currentUser && feed.createdBy === currentUser._id);
+  // let isOwner = $derived(!!feed && !!currentUser && feed.createdBy === currentUser._id);
 
 
   const convexClient = useConvexClient();
@@ -61,6 +61,7 @@
           feedId: feed._id,
           title: feed.title,
           type: feed.type,
+          language: feed.language,
           public: feed.public,
           meta: feed.meta,
           coverFileId: feed.coverFileId,
@@ -93,7 +94,7 @@
   }
 
   // State for collaborators
-  let collaborators = $state<FeedCollaborator[]>([]);
+  // let collaborators = $state<FeedCollaborator[]>([]);
   let showAddCollaboratorDialog = $state(false);
   let userToRemove = $state<{ id: string; name: string } | null>(null);
   let showRemoveDialog = $state(false);

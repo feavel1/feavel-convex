@@ -281,11 +281,13 @@ export const getFeedCollaborators = query({
     feedId: v.id("feed"),
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) {
-      throw new Error("Authentication required");
+    let user;
+    try {
+      user = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // Not authenticated → no permission (except public read, already handled)
+      return false;
     }
-
     // Check if user has read permission to view collaborators
     // The feed owner and any collaborator can view the list of collaborators
     const feed = await ctx.db.get(args.feedId);

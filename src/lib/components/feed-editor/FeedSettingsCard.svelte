@@ -39,6 +39,9 @@
   // Create state for local type selection to handle Select binding
   let localFeedType = $state('');
 
+  // Create state for local language selection to handle Select binding
+  let localFeedLanguage = $state('');
+
   // Create derived content for Select trigger
   const feedTypeOptions = [
     { value: "article", label: "Article" },
@@ -47,9 +50,21 @@
     { value: "custom", label: "Custom" }
   ];
 
+  // Available language options based on the paraglide setup
+  const feedLanguageOptions = [
+    { value: "en", label: "English" },
+    { value: "zh", label: "中文" },
+    { value: "ru", label: "Русский" }
+  ];
+
   // Use $derived to create trigger content
   const triggerContent = $derived(
     feedTypeOptions.find((option) => option.value === localFeedType)?.label ?? "Select a type"
+  );
+
+  // Use $derived to create language trigger content
+  const languageTriggerContent = $derived(
+    feedLanguageOptions.find((option) => option.value === localFeedLanguage)?.label ?? "Select a language"
   );
 
   // Initialize local type when feed changes
@@ -59,11 +74,27 @@
     }
   });
 
+  // Initialize local language when feed changes
+  $effect(() => {
+    if (feedProp?.language && feedProp.language !== localFeedLanguage) {
+      localFeedLanguage = feedProp.language;
+    }
+  });
+
   // Handle type change from user selection
   function handleTypeChange(newType: string) {
     localFeedType = newType;
     if (feedProp && newType && newType !== feedProp.type) {
       feedProp.type = newType;
+      debouncedSaveProp();
+    }
+  }
+
+  // Handle language change from user selection
+  function handleLanguageChange(newLanguage: string) {
+    localFeedLanguage = newLanguage;
+    if (feedProp && newLanguage && newLanguage !== feedProp.language) {
+      feedProp.language = newLanguage;
       debouncedSaveProp();
     }
   }
@@ -221,6 +252,34 @@
           </Select.Content>
         </Select.Root>
         <Label for="feed-type-select" class="text-sm text-muted-foreground">Feed Type</Label>
+      </div>
+
+      <div class="space-y-2">
+        <Select.Root
+          type="single"
+          value={localFeedLanguage}
+          onValueChange={(value) => {
+            if (value) handleLanguageChange(value);
+          }}
+        >
+          <Select.Trigger class="w-45">
+            {languageTriggerContent}
+          </Select.Trigger>
+          <Select.Content>
+            <Select.Group>
+              <Select.Label>Feed Language</Select.Label>
+              {#each feedLanguageOptions as option (option.value)}
+                <Select.Item
+                  value={option.value}
+                  label={option.label}
+                >
+                  {option.label}
+                </Select.Item>
+              {/each}
+            </Select.Group>
+          </Select.Content>
+        </Select.Root>
+        <Label for="feed-language-select" class="text-sm text-muted-foreground">Feed Language</Label>
       </div>
 
       <div class="space-y-2">

@@ -4,6 +4,7 @@
 	import { Home, User, MessageCircle } from '@lucide/svelte';
 	import type { ComponentType } from 'svelte';
 	import Button from '../button/button.svelte';
+    import ModeSwitch from '$lib/components/modules/interactive/ModeSwitch.svelte';
 
 
 	const { scrollYProgress } = useViewportScroll();
@@ -88,6 +89,7 @@
 					<span class="hidden text-sm sm:block">{navItem.name}</span>
 				</a>
 			{/each}
+			<ModeSwitch />
 			<Button href="/auth/sign-up"
 				class="relative rounded-full border border-neutral-500 px-4 mx-2 text-sm font-medium  dark:border-white/[0.2] dark:text-white"
 			>

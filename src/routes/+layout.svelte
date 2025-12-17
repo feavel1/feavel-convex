@@ -13,6 +13,7 @@
 
 	import { authClient } from '$lib/auth-client';
 	import FloatingNavbar from '$lib/components/ui/floating-navbar/FloatingNavbar.svelte';
+    import { ModeWatcher } from 'mode-watcher';
 
 	createSvelteAuthClient({ authClient });
 
@@ -20,6 +21,7 @@
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<ModeWatcher />
 <Toaster />
 <FloatingNavbar />
 <!-- <div class="container mx-auto py-8 max-w-6xl pt-6"> -->

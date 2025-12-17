@@ -153,4 +153,4 @@
 	});
 </script>
 
-<div bind:this={editorEl} class="prose rounded-lg border {className}"></div>
+<div bind:this={editorEl} class="prose min-h-screen rounded-lg border {className}"></div>

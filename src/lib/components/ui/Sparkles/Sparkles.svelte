@@ -8,7 +8,7 @@
 		minSize = 3,
 		maxSize = 3,
 		speed = 2,
-		particleColor = '#000000',
+		particleColor = '#0080FF',
 		particleDensity = 60,
 		className = undefined
 	}: {

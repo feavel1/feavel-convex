@@ -1,23 +1,7 @@
 <script lang="ts">
-	import type { PageData } from './$types';
 	import * as Code from '$lib/components/ui/code';
 	import FeedLikes from '$lib/components/feed-helpers/FeedLikes.svelte';
-	import type { Id } from '$convex/_generated/dataModel';
-
-	// Define feed type
-	interface Feed {
-		_id: Id<'feed'>;
-		title: string;
-		content: any; // Generic object type from Convex
-		slug: string;
-		type: string;
-		public: boolean;
-		createdBy: string;
-		createdAt: number;
-		updatedAt?: number;
-		likeCount: number;
-		isLiked: boolean;
-	}
+	import Separator from '$lib/components/ui/separator/separator.svelte';
 
 	// Define Editor.js block type
 	interface EditorJSBlock {
@@ -56,9 +40,9 @@
 
 <div class="container mx-auto max-w-4xl py-8">
 	<div class="mb-8">
-		<h1 class="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">{feed.title}</h1>
+		<h1 class="mb-4 text-3xl font-bold md:text-4xl">{feed.title}</h1>
 
-		<div class="mb-4 flex flex-wrap items-center text-sm text-gray-600">
+		<div class="mb-4 flex flex-wrap items-center text-sm">
 			<span class="mr-4">Created: {formatDate(feed.createdAt)}</span>
 			{#if feed.updatedAt}
 				<span>Updated: {formatDate(feed.updatedAt)}</span>
@@ -87,7 +71,7 @@
 			<FeedLikes feedId={feed._id} likeCount={feed.likeCount} isLiked={feed.isLiked} />
 		</div>
 	</div>
-
+	<Separator class="mb-4" />
 	<!-- Display feed content -->
 	<div class="prose max-w-none">
 		{#if isEditorJSContent(feed.content) && feed.content.blocks && feed.content.blocks.length > 0}
@@ -109,7 +93,7 @@
 						<h2 class="mt-6 mb-4 text-xl font-bold">{block.data.text}</h2>
 					{/if}
 				{:else if block.type === 'paragraph'}
-					<p class="mb-4 text-gray-700">
+					<p class="mb-4">
 						{block.data.text}
 					</p>
 				{:else if block.type === 'list'}

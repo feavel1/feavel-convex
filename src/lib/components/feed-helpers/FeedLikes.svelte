@@ -55,7 +55,8 @@
 </script>
 
 <Button
-	variant={isLiked ? 'default' : 'outline'}
+	size="sm"
+	variant={isLiked ? 'default' : 'ghost'}
 	onclick={handleToggleLike}
 	disabled={isSubmitting}
 	class="gap-2"

@@ -101,50 +101,50 @@ export const removeLike = mutation({
 	}
 });
 
-// Get both like status and count for a specific feed
-export const getLikeData = query({
-	args: {
-		feedId: v.id('feed')
-	},
-	returns: v.object({
-		isLiked: v.boolean(),
-		likeCount: v.number()
-	}),
-	handler: async (ctx, args) => {
-		// For non-public feeds or higher roles, require authentication
-		let user;
-		// Get like count
-		const likes = await ctx.db
-			.query('feedLikes')
-			.withIndex('by_feed', (q) => q.eq('feedId', args.feedId))
-			.collect();
+// // Get both like status and count for a specific feed
+// export const getLikeData = query({
+// 	args: {
+// 		feedId: v.id('feed')
+// 	},
+// 	returns: v.object({
+// 		isLiked: v.boolean(),
+// 		likeCount: v.number()
+// 	}),
+// 	handler: async (ctx, args) => {
+// 		// For non-public feeds or higher roles, require authentication
+// 		let user;
+// 		// Get like count
+// 		const likes = await ctx.db
+// 			.query('feedLikes')
+// 			.withIndex('by_feed', (q) => q.eq('feedId', args.feedId))
+// 			.collect();
 
-		try {
-			user = await authComponent.getAuthUser(ctx);
-		} catch (error) {
-			// Not authenticated →
-			return {
-				isLiked: false,
-				likeCount: likes.length
-			};
-		}
+// 		try {
+// 			user = await authComponent.getAuthUser(ctx);
+// 		} catch (error) {
+// 			// Not authenticated →
+// 			return {
+// 				isLiked: false,
+// 				likeCount: likes.length
+// 			};
+// 		}
 
-		// Check if current user liked
-		let isLiked = false;
-		if (user && user._id) {
-			const userLike = await ctx.db
-				.query('feedLikes')
-				.withIndex('by_feed_and_user', (q) => q.eq('feedId', args.feedId).eq('userId', user._id))
-				.unique();
-			isLiked = !!userLike;
-		}
+// 		// Check if current user liked
+// 		let isLiked = false;
+// 		if (user && user._id) {
+// 			const userLike = await ctx.db
+// 				.query('feedLikes')
+// 				.withIndex('by_feed_and_user', (q) => q.eq('feedId', args.feedId).eq('userId', user._id))
+// 				.unique();
+// 			isLiked = !!userLike;
+// 		}
 
-		return {
-			isLiked,
-			likeCount: likes.length
-		};
-	}
-});
+// 		return {
+// 			isLiked,
+// 			likeCount: likes.length
+// 		};
+// 	}
+// });
 
 // Get all feeds liked by the current user
 export const getUserFeedLikes = query({

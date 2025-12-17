@@ -8,6 +8,7 @@
 	import * as Pagination from '$lib/components/ui/pagination/index.js';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
+	import CardFooter from '$lib/components/ui/card/card-footer.svelte';
 
 	// Define the feed type tabs
 	const feedTypeTabs = [
@@ -170,7 +171,7 @@
 												<span>{formatDate(feed.createdAt)}</span>
 											</div>
 										</CardHeader>
-										<CardContent class="pb-4">
+										<CardContent class="grow pb-4">
 											<p class="line-clamp-2 text-sm text-muted-foreground">
 												{feed.content &&
 												Array.isArray(feed.content.blocks) &&
@@ -183,19 +184,19 @@
 															.substring(0, 100) + '...'
 													: 'No content yet'}
 											</p>
-											<div class="mt-4 flex items-center justify-between">
-												<div class="flex items-center gap-2">
-													<FeedLikes
-														feedId={feed._id}
-														likeCount={feed.likeCount}
-														isLiked={feed.isLiked}
-													/>
-												</div>
-												<Button size="sm" variant="outline" href="/feed/{feed.slug}">
-													View Details
-												</Button>
-											</div>
 										</CardContent>
+										<CardFooter class="shrink-0 items-center justify-between">
+											<div class="flex items-center gap-2">
+												<FeedLikes
+													feedId={feed._id}
+													likeCount={feed.likeCount}
+													isLiked={feed.isLiked}
+												/>
+											</div>
+											<Button size="sm" variant="outline" href="/feed/{feed.slug}">
+												View Details
+											</Button>
+										</CardFooter>
 									</Card>
 								{/each}
 							</div>

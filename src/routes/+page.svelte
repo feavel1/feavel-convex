@@ -11,7 +11,6 @@
 	import TextRevealCard from '$lib/components/ui/TextRevealCard/TextRevealCard.svelte';
 	import TextRevealCardDescription from '$lib/components/ui/TextRevealCard/TextRevealCardDescription.svelte';
 	import TextRevealCardTitle from '$lib/components/ui/TextRevealCard/TextRevealCardTitle.svelte';
-	import { Motion } from 'svelte-motion';
 	import { ClipboardCopy, File, FileSignature, Table } from '@lucide/svelte';
 
 	const items = [
@@ -41,25 +40,6 @@
 			icon: Table
 		}
 	];
-
-	const words = [
-		{
-			text: 'Build'
-		},
-		{
-			text: 'awesome'
-		},
-		{
-			text: 'apps'
-		},
-		{
-			text: 'with'
-		},
-		{
-			text: 'Aceternity.',
-			className: 'text-blue-500 dark:text-blue-500'
-		}
-	];
 </script>
 
 <!-- Hero Section -->
@@ -71,33 +51,6 @@
 		Build web<br />with Фeavel
 	</h1>
 </LampEffect>
-
-<!-- Articles Section -->
-<section
-	class="bg-linear-to-b from-transparent to-slate-50 py-20 dark:to-slate-900/10"
-	aria-labelledby="articles-heading"
->
-	<div class="container mx-auto px-4">
-		<div class="mb-16 text-center">
-			<h2 id="articles-heading" class="mb-4 text-3xl font-bold md:text-4xl">Articles & Content</h2>
-			<p class="mx-auto max-w-2xl text-muted-foreground">
-				Recent works, research, and tutorials across web dev, music, and research
-			</p>
-		</div>
-
-		<BentoGrid className="max-w-4xl mx-auto md:auto-rows-[20rem]">
-			{#each items as item, i (i)}
-				<BentoGridItem title={item.title} description={item.description} className={item.className}>
-					<div
-						slot="header"
-						class="bg-dot-black/[0.2] dark:bg-dot-white/[0.2] flex h-full min-h-[6rem] w-full flex-1 rounded-xl border border-transparent bg-neutral-100 [mask-image:radial-gradient(ellipse_at_center,white,transparent)] dark:border-white/[0.2] dark:bg-black"
-					></div>
-					<svelte:component this={item.icon} slot="icon" class="h-4 w-4 text-neutral-500" />
-				</BentoGridItem>
-			{/each}
-		</BentoGrid>
-	</div>
-</section>
 
 <!-- Highlights Section -->
 <section class="py-20" aria-labelledby="highlights-heading">
@@ -111,10 +64,10 @@
 
 		<div class="flex flex-col items-center justify-center gap-6 md:flex-row">
 			<GlowingStarsBackgroundCard className="max-w-sm">
-				<GlowingStarsTitle>Articles & Insights</GlowingStarsTitle>
+				<GlowingStarsTitle>💁 Services</GlowingStarsTitle>
 				<div class="flex items-end justify-between">
 					<GlowingStarsDescription>
-						Discover web dev, music, and research content.
+						Discover web dev, music, and research services.
 					</GlowingStarsDescription>
 					<div
 						class="flex h-8 w-8 items-center justify-center rounded-full bg-[hsla(0,0%,100%,.1)]"
@@ -145,10 +98,10 @@
 				<Icon class="absolute -top-3 -right-3 h-6 w-6 text-black dark:text-white" />
 				<Icon class="absolute -right-3 -bottom-3 h-6 w-6 text-black dark:text-white" />
 
-				<EvervaultCard text="Explore" />
+				<EvervaultCard text="Products" />
 
 				<h3 class="mt-6 text-lg font-medium text-black dark:text-white">
-					Discover our content collection.
+					🎁 Hover to discover our product collection.
 				</h3>
 				<!-- <p
 				class="mt-4 rounded-full border border-black/[0.2] px-3 py-1 text-sm font-light text-black dark:border-white/[0.2] dark:text-white"
@@ -160,9 +113,36 @@
 	</div>
 </section>
 
+<!-- Articles Section -->
+<section
+	class="bg-linear-to-b from-transparent to-slate-50 py-20 dark:to-slate-900/10"
+	aria-labelledby="articles-heading"
+>
+	<div class="container mx-auto px-4">
+		<div class="mb-16 text-center">
+			<h2 id="articles-heading" class="mb-4 text-3xl font-bold md:text-4xl">Articles & Content</h2>
+			<p class="mx-auto max-w-2xl text-muted-foreground">
+				Recent works, research, and tutorials across web dev, music, and language research
+			</p>
+		</div>
+
+		<BentoGrid className="max-w-4xl mx-auto md:auto-rows-[20rem]">
+			{#each items as item, i (i)}
+				<BentoGridItem title={item.title} description={item.description} className={item.className}>
+					<div
+						slot="header"
+						class="bg-dot-black/[0.2] dark:bg-dot-white/[0.2] flex h-full min-h-[6rem] w-full flex-1 rounded-xl border border-transparent bg-neutral-100 [mask-image:radial-gradient(ellipse_at_center,white,transparent)] dark:border-white/[0.2] dark:bg-black"
+					></div>
+					<svelte:component this={item.icon} slot="icon" class="h-4 w-4 text-neutral-500" />
+				</BentoGridItem>
+			{/each}
+		</BentoGrid>
+	</div>
+</section>
+
 <!-- CTA Section -->
 <section
-	class="h-[80vh] bg-linear-to-t from-transparent to-slate-50 py-20"
+	class="h-[70vh] bg-linear-to-t from-transparent to-slate-50/10 py-20"
 	aria-labelledby="cta-heading"
 >
 	<div class="container mx-auto max-w-2xl px-4">
@@ -188,6 +168,7 @@
 </section>
 
 <Sparkles />
+
 <!-- <section class="relative py-20 md:py-32" aria-labelledby="hero-heading">
 	<div class="container mx-auto px-4">
 

@@ -107,45 +107,50 @@ export const removeLike = mutation({
   },
 });
 
-// Get the like status for a specific feed by the current user
-export const getLikeStatus = query({
+// Get both like status and count for a specific feed
+export const getLikeData = query({
   args: {
     feedId: v.id("feed"),
   },
-  returns: v.boolean(),
+  returns: v.object({
+    isLiked: v.boolean(),
+    likeCount: v.number(),
+  }),
   handler: async (ctx, args) => {
-    const user = await authComponent.getAuthUser(ctx);
-    if (!user) {
-      return false; // Not authenticated, so cannot have liked
-    }
-
-    if (!user._id) {
-      return false; // No user ID, so can't have liked
-    }
-    const like = await ctx.db
-      .query("feedLikes")
-      .withIndex("by_feed_and_user", (q) =>
-        q.eq("feedId", args.feedId).eq("userId", user._id),
-      )
-      .unique();
-
-    return !!like;
-  },
-});
-
-// Get the total like count for a feed
-export const getLikeCount = query({
-  args: {
-    feedId: v.id("feed"),
-  },
-  returns: v.number(),
-  handler: async (ctx, args) => {
+    // For non-public feeds or higher roles, require authentication
+    let user;
+    // Get like count
     const likes = await ctx.db
       .query("feedLikes")
       .withIndex("by_feed", (q) => q.eq("feedId", args.feedId))
       .collect();
 
-    return likes.length;
+    try {
+      user = await authComponent.getAuthUser(ctx);
+    } catch (error) {
+      // Not authenticated →
+      return {
+        isLiked: false,
+        likeCount: likes.length,
+      };
+    }
+
+    // Check if current user liked
+    let isLiked = false;
+    if (user && user._id) {
+      const userLike = await ctx.db
+        .query("feedLikes")
+        .withIndex("by_feed_and_user", (q) =>
+          q.eq("feedId", args.feedId).eq("userId", user._id),
+        )
+        .unique();
+      isLiked = !!userLike;
+    }
+
+    return {
+      isLiked,
+      likeCount: likes.length,
+    };
   },
 });
 

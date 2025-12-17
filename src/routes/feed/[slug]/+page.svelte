@@ -1,11 +1,13 @@
 <script lang="ts">
   import type { PageData } from './$types';
  	import * as Code from '$lib/components/ui/code';
+  import FeedLikes from '$lib/components/feed-helpers/FeedLikes.svelte';
+  import type { Id } from '$convex/_generated/dataModel';
 
 
   // Define feed type
   interface Feed {
-    _id: string;
+    _id: Id<'feed'>;
     title: string;
     content: any; // Generic object type from Convex
     slug: string;
@@ -62,19 +64,20 @@
       {/if}
     </div>
 
-    <div class="flex items-center text-sm">
+    <div class="flex flex-wrap items-center gap-3 text-sm">
       <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
         {feed.type}
       </span>
       {#if feed.public}
-        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
           Public
         </span>
       {:else}
-        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
           Private
         </span>
       {/if}
+      <FeedLikes feedId={feed._id} />
     </div>
   </div>
 

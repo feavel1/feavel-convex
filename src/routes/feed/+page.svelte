@@ -7,6 +7,7 @@
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
   import { Button } from '$lib/components/ui/button/index.js';
   import Separator from '$lib/components/ui/separator/separator.svelte';
+  import FeedLikes from '$lib/components/feed-helpers/FeedLikes.svelte';
 
   // Define the feed type tabs
   const feedTypeTabs = [
@@ -184,13 +185,16 @@
                       : 'No content yet'}
                   </p>
                   <div class="mt-4 flex justify-between items-center">
-                    <span class="text-xs">
-                      {#if feed.public}
-                        <span class="text-green-600">Public</span>
-                      {:else}
-                        <span class="text-yellow-600">Private</span>
-                      {/if}
-                    </span>
+                    <div class="flex items-center gap-2">
+                      <FeedLikes feedId={feed._id} />
+                      <!-- <span class="text-xs">
+                        {#if feed.public}
+                          <span class="text-green-600">Public</span>
+                        {:else}
+                          <span class="text-yellow-600">Private</span>
+                        {/if}
+                      </span> -->
+                    </div>
                     <Button size="sm" variant="outline" href = "/feed/{feed.slug}">
                       View Details
                     </Button>

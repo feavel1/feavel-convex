@@ -8,32 +8,24 @@
   import FeedSettingsCard from "$lib/components/feed-editor/FeedSettingsCard.svelte";
   import CoverImageManager from "$lib/components/feed-editor/CoverImageManager.svelte";
   import CollaboratorManager from "$lib/components/feed-editor/CollaboratorManager.svelte";
-  import AddCollaboratorDialog from "$lib/components/feed-editor/AddCollaboratorDialog.svelte";
-  import RemoveCollaboratorDialog from "$lib/components/feed-editor/RemoveCollaboratorDialog.svelte";
   import FeedTitleEditor from "$lib/components/feed-editor/FeedTitleEditor.svelte";
-
-  import { toast } from 'svelte-sonner';
 
   let { params } = $props();
 
   // Get feedId from URL params reactively
   let feedId: Id<"feed"> = $derived(params.feedId as Id<"feed">);
 
-  // Get the feed data and current user data
+  // Get the feed data
   let feedQuery = useQuery(api.feeds.feeds.unifiedFeedQuery, () => ({ feedIds: [feedId] }));
-  let currentUserQuery = useQuery(api.auth.getCurrentUser, {});
   let feed = $derived(feedQuery.data?.feeds?.[0]);
-  let currentUser = $derived(currentUserQuery.data);
-  // let isOwner = $derived(!!feed && !!currentUser && feed.createdBy === currentUser._id);
-
 
   const convexClient = useConvexClient();
   let saving = $state<boolean>(false);
   let saveError = $state<string | null>(null);
 
   // Track loading and error states
-  let isLoading = $derived(feedQuery.isLoading || currentUserQuery.isLoading);
-  let error = $derived(feedQuery.error || currentUserQuery.error);
+  let isLoading = $derived(feedQuery.isLoading);
+  let error = $derived(feedQuery.error);
 
   // Debounce timer for auto-saving
   let saveTimeout: NodeJS.Timeout | null = $state(null);
@@ -80,46 +72,6 @@
     }, 8000); // 8 second debounce
   }
 
-  // Collaborator management state variables
-  interface FeedCollaborator {
-    _id: string;
-    feedId: string;
-    userId: string;
-    role: 'read' | 'edit' | 'admin';
-    addedAt: number;
-    user?: {
-      name: string;
-      email: string;
-    } | null;
-  }
-
-  // State for collaborators
-  // let collaborators = $state<FeedCollaborator[]>([]);
-  let showAddCollaboratorDialog = $state(false);
-  let userToRemove = $state<{ id: string; name: string } | null>(null);
-  let showRemoveDialog = $state(false);
-
-  // Handle removing a collaborator
-  async function handleRemoveCollaborator() {
-    if (!userToRemove || !feed || !feed._id) return;
-
-    try {
-      await convexClient.mutation(
-        api.feeds.feedCollaborators.removeCollaborator,
-        {
-          feedId: feed._id,
-          userId: userToRemove.id // Pass the userId directly
-        }
-      );
-
-      toast.success('Collaborator removed successfully');
-      showRemoveDialog = false;
-      userToRemove = null;
-    } catch (error) {
-      console.error('Error removing collaborator:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to remove collaborator');
-    }
-  }
 </script>
 
 <div class="container mx-auto py-8">
@@ -147,22 +99,6 @@
 
     <CollaboratorManager
       {feed}
-      {currentUser}
-      {showAddCollaboratorDialog}
-      setShowAddCollaboratorDialog={(show: boolean) => showAddCollaboratorDialog = show}
-    />
-
-    <AddCollaboratorDialog
-      isOpen={showAddCollaboratorDialog}
-      {feed}
-      onClose={() => showAddCollaboratorDialog = false}
-    />
-
-    <RemoveCollaboratorDialog
-      isOpen={showRemoveDialog}
-      {userToRemove}
-      onRemove={handleRemoveCollaborator}
-      onCancel={() => showRemoveDialog = false}
     />
 
     <FeedTitleEditor

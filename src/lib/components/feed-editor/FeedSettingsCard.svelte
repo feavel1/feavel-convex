@@ -1,17 +1,10 @@
 <script lang="ts">
-  import type { Id, Doc } from "$convex/_generated/dataModel";
-
   // Shadcn-svelte components
   import * as Card from '$lib/components/ui/card/index.js';
   import { Label } from '$lib/components/ui/label/index.js';
   import { Input } from '$lib/components/ui/input/index.js';
   import * as Select from "$lib/components/ui/select/index.js";
   import { Switch } from '$lib/components/ui/switch';
-
-  interface FeedSettingsCardProps {
-    feed: Doc<"feed">;
-    debouncedSave: () => void;
-  }
 
   let {
     feed: feedProp,

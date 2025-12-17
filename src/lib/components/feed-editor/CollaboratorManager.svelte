@@ -12,6 +12,10 @@
   import * as Select from "$lib/components/ui/select/index.js";
   import { UserPlus, Trash2 } from '@lucide/svelte';
 
+  // Import dialog components to make this component self-contained
+  import AddCollaboratorDialog from "./AddCollaboratorDialog.svelte";
+  import RemoveCollaboratorDialog from "./RemoveCollaboratorDialog.svelte";
+
   // Define the type for feed collaborators including user details
   interface FeedCollaborator {
     _id: Id<"feedCollaborators">;
@@ -25,19 +29,24 @@
     } | null;
   }
 
-  let { feed, currentUser, showAddCollaboratorDialog, setShowAddCollaboratorDialog } = $props();
+  let { feed } = $props();
 
-  // State for collaborators
+  // State for collaborators and current user (to reduce round trips)
   let collaboratorsQuery = useQuery(api.feeds.feedCollaborators.getFeedCollaborators, () => ({ feedId: feed._id }));
+  let currentUserQuery = useQuery(api.auth.getCurrentUser, {});
   let collaborators = $derived(collaboratorsQuery.data as FeedCollaborator[] || []);
-  let isLoading = $derived(collaboratorsQuery.isLoading);
-  let error = $derived(collaboratorsQuery.error);
+  let currentUser = $derived(currentUserQuery.data);
+  let isLoading = $derived(collaboratorsQuery.isLoading || currentUserQuery.isLoading);
+  let error = $derived(collaboratorsQuery.error || currentUserQuery.error);
 
   let isOwner = $derived(!!feed && !!currentUser && feed.createdBy === currentUser._id);
 
   // Alert dialog state for removing collaborators
   let showRemoveDialog = $state(false);
   let userToRemove = $state<{ id: string; name: string } | null>(null);
+
+  // State for add collaborator dialog
+  let showAddCollaboratorDialog = $state(false);
 
   // Confirm remove collaborator
   function confirmRemoveCollaborator(collaborator: FeedCollaborator) {
@@ -111,7 +120,7 @@
     {#if isOwner}
       <Button
         variant="outline"
-        onclick={() => setShowAddCollaboratorDialog(true)}
+        onclick={() => showAddCollaboratorDialog = true}
       >
         <UserPlus class="w-4 h-4 mr-2" />
         Add Collaborator
@@ -204,5 +213,18 @@
       </div>
     {/if}
   {/if}
+
+  <AddCollaboratorDialog
+    isOpen={showAddCollaboratorDialog}
+    {feed}
+    onClose={() => showAddCollaboratorDialog = false}
+  />
+
+  <RemoveCollaboratorDialog
+    isOpen={showRemoveDialog}
+    {userToRemove}
+    onRemove={handleRemoveCollaborator}
+    onCancel={() => showRemoveDialog = false}
+  />
 </div>
 

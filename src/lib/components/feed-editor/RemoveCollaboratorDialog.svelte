@@ -1,13 +1,6 @@
 <script lang="ts">
   import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 
-  interface RemoveCollaboratorDialogProps {
-    isOpen: boolean;
-    userToRemove: { id: string; name: string } | null;
-    onRemove: () => void;
-    onCancel: () => void;
-  }
-
   let {
     isOpen: isOpenProp,
     userToRemove: userToRemoveProp,

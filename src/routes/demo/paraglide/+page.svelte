@@ -10,7 +10,7 @@
 	<button onclick={() => setLocale('ru')}>ru</button>
 </div>
 <p>
-	If you use VSCode, install the 
+	If you use VSCode, install the
 	<a
 		href="https://marketplace.visualstudio.com/items?itemName=inlang.vs-code-extension"
 		target="_blank"

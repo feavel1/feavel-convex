@@ -1,5 +1,5 @@
 <script>
-  import Separator from "$lib/components/ui/separator/separator.svelte";
+	import Separator from '$lib/components/ui/separator/separator.svelte';
 </script>
 
 <div class="flex flex-1 flex-col">
@@ -10,6 +10,5 @@
 		</div>
 
 		<Separator />
-
 	</div>
 </div>

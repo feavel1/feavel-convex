@@ -59,7 +59,7 @@
 	<div class="absolute inset-0">
 		{#each particles as particle (`${particle.id}`)}
 			<span
-				class="inline-block sparkle-animation"
+				class="sparkle-animation inline-block"
 				style={`position: absolute;
 					width: ${getRandomValue()}px;
 					height: ${getRandomValue()}px;
@@ -68,8 +68,7 @@
 					top: calc(${particle.initialTop}% + ${particle.randomTopMove}px);
 					left: calc(${particle.initialLeft}% + ${particle.randomLeftMove}px);
 					animation: sparkle-move ${particle.duration}s linear infinite;
-					opacity: ${particle.opacity};`
-				}
+					opacity: ${particle.opacity};`}
 			></span>
 		{/each}
 	</div>

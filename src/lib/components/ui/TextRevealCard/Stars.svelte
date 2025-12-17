@@ -37,7 +37,7 @@
 <div class="absolute inset-0 z-40">
 	{#each stars as star (`${star.id}`)}
 		<span
-			class="z-50 inline-block star-animation"
+			class="star-animation z-50 inline-block"
 			style={`position: absolute;
 				width: 2px;
 				height: 2px;
@@ -47,8 +47,7 @@
 				left: calc(${star.initialLeft}% + ${star.randomLeftMove}px);
 				z-index: 1;
 				opacity: ${star.opacity};
-				animation: sparkle-move ${star.duration}s linear infinite;`
-			}
+				animation: sparkle-move ${star.duration}s linear infinite;`}
 		></span>
 	{/each}
 </div>

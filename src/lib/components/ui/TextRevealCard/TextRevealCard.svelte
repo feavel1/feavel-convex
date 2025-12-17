@@ -65,7 +65,7 @@
 
 	<div class="relative flex h-40 items-center overflow-hidden">
 		<div
-			class="absolute z-20 bg-[#1d1c20] will-change-transform reveal-text transition-all duration-300 ease-out"
+			class="reveal-text absolute z-20 bg-[#1d1c20] transition-all duration-300 ease-out will-change-transform"
 			style={`opacity: ${isMouseOver && widthPercentage > 0 ? 1 : 0}; clip-path: inset(0 ${100 - widthPercentage}% 0 0);`}
 		>
 			<p
@@ -77,7 +77,7 @@
 		</div>
 
 		<div
-			class="absolute z-50 h-40 w-[8px] bg-gradient-to-b from-transparent via-neutral-800 to-transparent will-change-transform transition-all duration-300 ease-out"
+			class="absolute z-50 h-40 w-[8px] bg-gradient-to-b from-transparent via-neutral-800 to-transparent transition-all duration-300 ease-out will-change-transform"
 			style={`left: ${widthPercentage}%; transform: rotate(${rotateDeg}deg); opacity: ${widthPercentage > 0 ? 1 : 0};`}
 		></div>
 
@@ -97,6 +97,8 @@
 <style>
 	.reveal-text {
 		width: 100%;
-		transition: clip-path 0.3s ease-out, opacity 0.3s ease-out;
+		transition:
+			clip-path 0.3s ease-out,
+			opacity 0.3s ease-out;
 	}
 </style>

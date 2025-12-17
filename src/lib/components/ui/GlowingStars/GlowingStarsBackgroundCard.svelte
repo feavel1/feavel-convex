@@ -13,7 +13,7 @@
 	role="button"
 	tabindex="0"
 	class={cn(
-		'h-[30rem] flex flex-col w-full max-w-md rounded-xl border border-[#eaeaea] bg-[linear-gradient(110deg,#333_0.6%,#222)] p-4 dark:border-neutral-600',
+		'flex h-[30rem] w-full max-w-md flex-col rounded-xl border border-[#eaeaea] bg-[linear-gradient(110deg,#333_0.6%,#222)] p-4 dark:border-neutral-600',
 		className
 	)}
 >

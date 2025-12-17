@@ -222,22 +222,20 @@
 
 <!-- Header -->
 
-
 <!-- Main Content -->
 <div class="flex flex-1 flex-col">
 	<div class="flex-1 space-y-6 p-6 md:p-10">
-	  <div class="flex justify-between items-center mb-6 ">
-		<div>
-			<h2 class="text-2xl font-bold tracking-tight">Admin</h2>
-			<p class="text-muted-foreground">Manage user accounts and permissions.</p>
-		</div>
+		<div class="mb-6 flex items-center justify-between">
+			<div>
+				<h2 class="text-2xl font-bold tracking-tight">Admin</h2>
+				<p class="text-muted-foreground">Manage user accounts and permissions.</p>
+			</div>
 
 			<Button onclick={() => (showCreateDialog = true)}>
 				<UserPlus class="mr-2 h-4 w-4" />
 				Add User
 			</Button>
-
-</div>
+		</div>
 		<Separator />
 
 		<!-- Users Table -->

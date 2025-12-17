@@ -1,17 +1,11 @@
 <script lang="ts">
- //@ts-nocheck
+	//@ts-nocheck
 	import { onMount } from 'svelte';
 	import { useConvexClient } from 'convex-svelte';
 	import { uploadFeedFileWithClient } from './editor';
 	// import {CodeTool} from './CodeTool.js';
 
-	let {
-		readOnly = false,
-		class: className = '',
-		content = null,
-		onChange,
-		feedId
-	} = $props();
+	let { readOnly = false, class: className = '', content = null, onChange, feedId } = $props();
 	let editor: any = $state(null);
 	let editorEl: HTMLElement;
 
@@ -25,7 +19,6 @@
 		const { default: List } = await import('@editorjs/list');
 		const { default: Quote } = await import('@editorjs/quote');
 		const { CodeTool } = await import('./CodeTool.js');
-
 
 		const { default: InlineCode } = await import('@editorjs/inline-code');
 		const { default: Delimiter } = await import('@editorjs/delimiter');
@@ -45,11 +38,11 @@
 			holder: editorEl,
 			data: content,
 			tools: {
-			 paragraph: {
-      class: Paragraph,
-      preserveBlank: true,
-      inlineToolbar: true,
-    },
+				paragraph: {
+					class: Paragraph,
+					preserveBlank: true,
+					inlineToolbar: true
+				},
 				header: Header,
 				list: List,
 				checklist: Checklist,
@@ -111,10 +104,9 @@
 				color: ColorPicker
 			},
 			onReady: () => {
-		  const undo = new Undo({ editor });
+				const undo = new Undo({ editor });
 				undo.initialize(content);
 				new DragDrop(editor);
-
 			},
 			onChange: () => {
 				if (onChange && editor) {

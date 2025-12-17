@@ -14,7 +14,9 @@
 	// Generate random glowing stars
 	$effect(() => {
 		const interval = setInterval(() => {
-			const newHighlightedStars = Array.from({ length: 5 }, () => Math.floor(Math.random() * stars));
+			const newHighlightedStars = Array.from({ length: 5 }, () =>
+				Math.floor(Math.random() * stars)
+			);
 			glowingStars = [...newHighlightedStars];
 		}, 3000);
 

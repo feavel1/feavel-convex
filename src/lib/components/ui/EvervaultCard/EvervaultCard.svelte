@@ -40,7 +40,7 @@
 
 <div
 	class={cn(
-		'aspect-square relative flex h-full w-full items-center justify-center bg-transparent p-0.5',
+		'relative flex aspect-square h-full w-full items-center justify-center bg-transparent p-0.5',
 		className
 	)}
 >
@@ -63,7 +63,7 @@
 				style={`mask-image: radial-gradient(250px at var(--mouse-x) var(--mouse-y), white, transparent); -webkit-mask-image: radial-gradient(250px at var(--mouse-x) var(--mouse-y), white, transparent);`}
 			>
 				<p
-					class="absolute inset-x-0 h-full whitespace-pre-wrap break-words font-mono text-xs font-bold text-white transition duration-500"
+					class="absolute inset-x-0 h-full font-mono text-xs font-bold break-words whitespace-pre-wrap text-white transition duration-500"
 				>
 					{randomString}
 				</p>

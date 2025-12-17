@@ -16,7 +16,6 @@
 	<title>Settings | SaaS Template</title>
 </svelte:head>
 
-
 <!-- Main Content -->
 <div class="flex flex-1 flex-col">
 	<div class="flex-1 space-y-6 p-6 md:p-10">

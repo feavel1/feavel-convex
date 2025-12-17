@@ -1,60 +1,71 @@
 <script lang="ts">
-  import { api } from '$convex/_generated/api.js';
-  import { useQuery } from 'convex-svelte';
-  import { useConvexClient } from 'convex-svelte';
-  import Heart from '@lucide/svelte/icons/heart';
-  import { Button } from '$lib/components/ui/button/index.js';
-  import type { Id } from '$convex/_generated/dataModel';
+	import { api } from '$convex/_generated/api.js';
+	import { useConvexClient } from 'convex-svelte';
+	import Heart from '@lucide/svelte/icons/heart';
+	import { Button } from '$lib/components/ui/button/index.js';
+	import type { Id } from '$convex/_generated/dataModel';
 
-  // Define props
-  let { feedId } = $props<{ feedId: Id<'feed'> }>();
+	// Define props - now include like data directly
+	let {
+		feedId,
+		likeCount: initialLikeCount,
+		isLiked: initialIsLiked
+	} = $props<{
+		feedId: Id<'feed'>;
+		likeCount: number;
+		isLiked: boolean;
+	}>();
 
-  // Get Convex client for mutations
-  const client = useConvexClient();
+	// State with initial values from props
+	let likeCount = $derived(initialLikeCount);
+	let isLiked = $derived(initialIsLiked);
+	let isSubmitting = $state(false);
 
-  // Query for like data (status and count)
-  const likeDataQuery = useQuery(api.feeds.likes.getLikeData, () => ({ feedId }));
+	// Get Convex client for mutations
+	const client = useConvexClient();
 
-  // Reactive state
-  let isSubmitting = $derived(likeDataQuery.isLoading);
+	// Handle toggle like
+	const handleToggleLike = async () => {
+		if (isSubmitting) return;
 
-  // Handle toggle like
-  const handleToggleLike = async () => {
-    if (likeDataQuery.isLoading) return;
+		// Optimistic update
+		const newIsLiked = !isLiked;
+		const likeDelta = newIsLiked ? 1 : -1;
+		isLiked = newIsLiked;
+		likeCount = likeCount + likeDelta;
+		isSubmitting = true;
 
-    const currentData = likeDataQuery.data;
-    if (!currentData) return;
-
-    // Optimistic update
-    const newIsLiked = !currentData.isLiked;
-
-    try {
-      if (newIsLiked) {
-        // Add like
-        await client.mutation(api.feeds.likes.addLike, { feedId });
-      } else {
-        // Remove like
-        await client.mutation(api.feeds.likes.removeLike, { feedId });
-      }
-    } catch (error) {
-      console.error('Error toggling like:', error);
-      // The query will automatically revert the optimistic update
-    }
-  };
+		try {
+			if (newIsLiked) {
+				// Add like
+				await client.mutation(api.feeds.likes.addLike, { feedId });
+			} else {
+				// Remove like
+				await client.mutation(api.feeds.likes.removeLike, { feedId });
+			}
+		} catch (error) {
+			console.error('Error toggling like:', error);
+			// Revert optimistic update on error
+			isLiked = !newIsLiked;
+			likeCount = likeCount - likeDelta;
+		} finally {
+			isSubmitting = false;
+		}
+	};
 </script>
 
 <Button
-  variant={likeDataQuery.data?.isLiked ? 'default' : 'outline'}
-  onclick={handleToggleLike}
-  disabled={isSubmitting || !likeDataQuery.data}
-  class="gap-2"
+	variant={isLiked ? 'default' : 'outline'}
+	onclick={handleToggleLike}
+	disabled={isSubmitting}
+	class="gap-2"
 >
-  {#if isSubmitting}
-    <div
-      class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-    ></div>
-  {:else}
-    <Heart class="h-4 w-4 {likeDataQuery.data?.isLiked ? 'fill-red-500 text-red-500' : ''}" />
-  {/if}
-  {likeDataQuery.data?.likeCount ?? 0}
+	{#if isSubmitting}
+		<div
+			class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+		></div>
+	{:else}
+		<Heart class="h-4 w-4 {isLiked ? 'fill-red-500 text-red-500' : ''}" />
+	{/if}
+	{likeCount}
 </Button>

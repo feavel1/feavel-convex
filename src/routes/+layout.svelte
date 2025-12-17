@@ -13,7 +13,7 @@
 
 	import { authClient } from '$lib/auth-client';
 	import FloatingNavbar from '$lib/components/ui/floating-navbar/FloatingNavbar.svelte';
-    import { ModeWatcher } from 'mode-watcher';
+	import { ModeWatcher } from 'mode-watcher';
 
 	createSvelteAuthClient({ authClient });
 
@@ -31,9 +31,7 @@
 <!-- <LiquidGlass>ABC</LiquidGlass> -->
 <div style="display:none">
 	{#each locales as locale}
-		<a
-			href={localizeHref(page.url.pathname, { locale })}
-		>
+		<a href={localizeHref(page.url.pathname, { locale })}>
 			{locale}
 		</a>
 	{/each}

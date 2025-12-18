@@ -3,7 +3,6 @@
 
 	// Shared feed state across feed pages in this layout
 	let activeTab = $state('article');
-	let activeLanguageTab = $state('en');
 	let currentPage = $state(1);
 	let cursorMap = $state(new Map<number, string | null>());
 
@@ -13,10 +12,6 @@
 		activeTab: {
 			get: () => activeTab,
 			set: (v: string) => (activeTab = v)
-		},
-		activeLanguageTab: {
-			get: () => activeLanguageTab,
-			set: (v: string) => (activeLanguageTab = v)
 		},
 		currentPage: {
 			get: () => currentPage,

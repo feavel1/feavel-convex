@@ -3,6 +3,9 @@
 	import { useQuery } from 'convex-svelte';
 	import FeedLikes from '$lib/components/feed-helpers/FeedLikes.svelte';
 
+	import { getContext } from 'svelte';
+	import { onMount } from 'svelte';
+
 	import { Button } from '$lib/components/ui/button/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import * as Pagination from '$lib/components/ui/pagination/index.js';
@@ -24,6 +27,9 @@
 		{ value: 'ru', label: 'Русский', description: 'View feeds in Russian' }
 	];
 
+	// Get the context from the layout
+	const feedState = getContext('feed:state');
+
 	// Reactive state for the active tab (for type filtering)
 	let activeTab = $state('article');
 
@@ -35,6 +41,26 @@
 	const perPage = 6; // Fixed at 6 per user request
 	let feedsCursor = $state<string | null>(null);
 	let cursorMap = $state(new Map<number, string | null>());
+
+	// Initialize state from context on mount
+	onMount(() => {
+		if (feedState) {
+			activeTab = feedState.activeTab.get();
+			activeLanguageTab = feedState.activeLanguageTab.get();
+			currentPage = feedState.currentPage.get();
+			cursorMap = feedState.cursorMap.get();
+		}
+	});
+
+	// Update context whenever state changes
+	$effect(() => {
+		if (feedState) {
+			feedState.activeTab.set(activeTab);
+			feedState.activeLanguageTab.set(activeLanguageTab);
+			feedState.currentPage.set(currentPage);
+			feedState.cursorMap.set(cursorMap);
+		}
+	});
 
 	// Format date for display
 	function formatDate(date: number): string {

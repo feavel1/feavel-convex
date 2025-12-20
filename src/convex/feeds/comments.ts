@@ -3,6 +3,7 @@ import { v } from 'convex/values';
 import type { Doc, Id } from '../_generated/dataModel';
 import { authComponent } from '../auth';
 import { paginationOptsValidator } from 'convex/server';
+import { internal } from '../_generated/api';
 
 // Add a comment to a feed
 export const addComment = mutation({
@@ -236,35 +237,39 @@ export const getComments = query({
 	}
 });
 
-// Get a specific comment
-export const getComment = query({
+// New function to get top-level comments with user information and engagement data
+export const getTopLevelCommentsWithUserInfo = query({
 	args: {
-		commentId: v.id('feedComments')
+		feedId: v.id('feed')
 	},
-	returns: v.optional(
-		v.object({
-			_id: v.id('feedComments'),
-			feedId: v.id('feed'),
-			userId: v.string(), // BetterAuth user ID
-			parentCommentId: v.optional(v.id('feedComments')),
-			content: v.string(),
-			createdAt: v.number(),
-			updatedAt: v.optional(v.number())
-		})
-	) as any, // Required due to Convex type system limitation
+	// returns: v.array(
+	// 	v.object({
+	// 		_id: v.id('feedComments'),
+	// 		feedId: v.id('feed'),
+	// 		userId: v.string(), // BetterAuth user ID
+	// 		parentCommentId: v.optional(v.id('feedComments')),
+	// 		content: v.string(),
+	// 		createdAt: v.number(),
+	// 		updatedAt: v.optional(v.number()),
+	// 		userInfo: v.object({
+	// 			name: v.optional(v.string()),
+	// 			email: v.optional(v.string()),
+	// 			image: v.optional(v.string())
+	// 		}),
+	// 		engagement: v.object({
+	// 			likeCount: v.number(),
+	// 			replyCount: v.number()
+	// 		})
+	// 	})
+	// ),
 	handler: async (ctx, args) => {
-		const comment = await ctx.db.get(args.commentId);
-		if (!comment) {
-			return null;
-		}
-
-		// Check if the feed is public, or if the user has access
-		const feed = await ctx.db.get(comment.feedId);
+		// Check if the feed exists
+		const feed = await ctx.db.get(args.feedId);
 		if (!feed) {
-			return null;
+			throw new Error('Feed not found');
 		}
 
-		// If the feed is private, check access
+		// Check if user has permission to view comments (public or they have access)
 		if (!feed.public) {
 			const user = await authComponent.getAuthUser(ctx);
 			if (!user) {
@@ -278,22 +283,180 @@ export const getComment = query({
 			if (!isCreator) {
 				const collaborator = await ctx.db
 					.query('feedCollaborators')
-					.withIndex('feedId_userId', (q) => q.eq('feedId', comment.feedId).eq('userId', user._id))
+					.withIndex('feedId_userId', (q) => q.eq('feedId', args.feedId).eq('userId', user._id))
 					.unique();
 				if (!collaborator) {
-					throw new Error('User does not have permission to view this comment');
+					throw new Error('User does not have permission to view comments on this feed');
 				}
 			}
 		}
 
-		return {
-			_id: comment._id,
-			feedId: comment.feedId,
-			userId: comment.userId,
-			parentCommentId: comment.parentCommentId,
-			content: comment.content,
-			createdAt: comment.createdAt,
-			updatedAt: comment.updatedAt
-		};
+		// Get all comments for the feed and filter for top-level comments (those with unset parentCommentId)
+		// Since optional fields that are unset in Convex can't be reliably filtered with === null
+		// Best practice: collect from indexed query and filter in code for small datasets
+		const allComments = await ctx.db
+			.query('feedComments')
+			.withIndex('by_feed_and_created_at', (q) => q.eq('feedId', args.feedId))
+			.order('desc')
+			.collect();
+
+		// Filter for top-level comments (those with unset parentCommentId field)
+		const comments = allComments.filter(comment => comment.parentCommentId === undefined || comment.parentCommentId === null);
+
+		// console.log(comments);
+
+		// Process each comment to include user info and engagement data
+		const commentsWithInfo = await Promise.all(
+			comments.map(async (comment) => {
+				// In this BetterAuth setup, we can't directly access other users' info
+				// For now, we'll return basic info. In a production setup, you might want to
+				// store user information directly in Convex when a comment is created
+				// or build a more elaborate user info retrieval system.
+
+				// For now, just return placeholder info
+				// In a real implementation, you would either:
+				// 1. Store user info directly with the comment when it's created
+				// 2. Use a separate function to resolve user info by ID
+				// 3. Implement a more complex user profile system in Convex
+
+				// Count replies to this comment
+				const replyCount = await ctx.db
+					.query('feedComments')
+					.withIndex('by_parent_comment', (q) => q.eq('parentCommentId', comment._id))
+					.collect()
+					.then((replies) => replies.length);
+
+				// Count likes for this comment (assuming there's a commentLikes table or similar)
+				// For now, just set to 0 since we don't have a likes table for comments yet
+				const likeCount = 0;
+
+				return {
+					...comment,
+					userInfo: {
+						name: 'User', // Placeholder - in real implementation, fetch from stored profile data
+						email: '', // Placeholder
+						image: '' // Placeholder
+					},
+					engagement: {
+						likeCount,
+						replyCount
+					}
+				};
+			})
+		);
+
+		return commentsWithInfo;
+	}
+});
+
+// New function to get child comments with user information and engagement data for a specific parent
+export const getChildCommentsWithUserInfo = query({
+	args: {
+		parentCommentId: v.id('feedComments')
+	},
+	// returns: v.array(
+	// 	v.object({
+	// 		_id: v.id('feedComments'),
+	// 		feedId: v.id('feed'),
+	// 		userId: v.string(), // BetterAuth user ID
+	// 		parentCommentId: v.optional(v.id('feedComments')),
+	// 		content: v.string(),
+	// 		createdAt: v.number(),
+	// 		updatedAt: v.optional(v.number()),
+	// 		userInfo: v.object({
+	// 			name: v.optional(v.string()),
+	// 			email: v.optional(v.string()),
+	// 			image: v.optional(v.string())
+	// 		}),
+	// 		engagement: v.object({
+	// 			likeCount: v.number(),
+	// 			replyCount: v.number()
+	// 		})
+	// 	})
+	// ),
+	handler: async (ctx, args) => {
+		// Get the parent comment to verify it exists
+		const parentComment = await ctx.db.get(args.parentCommentId);
+		if (!parentComment) {
+			throw new Error('Parent comment not found');
+		}
+
+		// Get the feed to check for permissions
+		const feed = await ctx.db.get(parentComment.feedId);
+		if (!feed) {
+			throw new Error('Feed not found');
+		}
+
+		// Check if user has permission to view comments (public or they have access)
+		if (!feed.public) {
+			const user = await authComponent.getAuthUser(ctx);
+			if (!user) {
+				throw new Error('User not authenticated');
+			}
+
+			if (!user._id) {
+				throw new Error('User ID not available');
+			}
+			const isCreator = feed.createdBy === user._id;
+			if (!isCreator) {
+				const collaborator = await ctx.db
+					.query('feedCollaborators')
+					.withIndex('feedId_userId', (q) =>
+						q.eq('feedId', parentComment.feedId).eq('userId', user._id)
+					)
+					.unique();
+				if (!collaborator) {
+					throw new Error('User does not have permission to view comments on this feed');
+				}
+			}
+		}
+
+		// Get child comments for the parent comment
+		const comments = await ctx.db
+			.query('feedComments')
+			.withIndex('by_parent_comment', (q) => q.eq('parentCommentId', args.parentCommentId))
+			.order('desc')
+			.collect();
+
+		// Process each comment to include user info and engagement data
+		const commentsWithInfo = await Promise.all(
+			comments.map(async (comment) => {
+				// In this BetterAuth setup, we can't directly access other users' info
+				// For now, we'll return basic info. In a production setup, you might want to
+				// store user information directly in Convex when a comment is created
+				// or build a more elaborate user info retrieval system.
+
+				// For now, just return placeholder info
+				// In a real implementation, you would either:
+				// 1. Store user info directly with the comment when it's created
+				// 2. Use a separate function to resolve user info by ID
+				// 3. Implement a more complex user profile system in Convex
+
+				// Count replies to this comment
+				const replyCount = await ctx.db
+					.query('feedComments')
+					.withIndex('by_parent_comment', (q) => q.eq('parentCommentId', comment._id))
+					.collect()
+					.then((replies) => replies.length);
+
+				// Count likes for this comment
+				const likeCount = 0;
+
+				return {
+					...comment,
+					userInfo: {
+						name: 'User', // Placeholder - in real implementation, fetch from stored profile data
+						email: '', // Placeholder
+						image: '' // Placeholder
+					},
+					engagement: {
+						likeCount,
+						replyCount
+					}
+				};
+			})
+		);
+
+		return commentsWithInfo;
 	}
 });

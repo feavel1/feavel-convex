@@ -2,6 +2,7 @@
 	import * as Code from '$lib/components/ui/code';
 	import FeedLikes from '$lib/components/feed-helpers/FeedLikes.svelte';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
+	import CommentSection from '$lib/components/modules/comments/CommentSection.svelte';
 
 	// Define Editor.js block type
 	interface EditorJSBlock {
@@ -161,5 +162,12 @@
 				<p class="text-gray-500">This feed has no content yet.</p>
 			</div>
 		{/if}
+	</div>
+
+	<!-- Comment Section -->
+	<div class="mt-12 border-t pt-8">
+		<h2 class="mb-6 text-2xl font-bold">Comments</h2>
+
+		<CommentSection {feed} />
 	</div>
 </div>

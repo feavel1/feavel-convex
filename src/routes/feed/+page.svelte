@@ -14,6 +14,22 @@
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import CardFooter from '$lib/components/ui/card/card-footer.svelte';
 
+	// Define the feed state context type
+	type FeedState = {
+		activeTab: {
+			get: () => string;
+			set: (v: string) => void;
+		};
+		currentPage: {
+			get: () => number;
+			set: (v: number) => void;
+		};
+		cursorMap: {
+			get: () => Map<number, string | null>;
+			set: (v: Map<number, string | null>) => void;
+		};
+	};
+
 	// Define the feed type tabs
 	const feedTypeTabs = [
 		{ value: 'article', label: 'Articles', description: 'View public article feeds' },
@@ -22,7 +38,7 @@
 	];
 
 	// Get the context from the layout
-	const feedState = getContext('feed:state');
+	const feedState: FeedState | undefined = getContext('feed:state');
 
 	// Reactive state for the active tab (for type filtering)
 	let activeTab = $state('article');

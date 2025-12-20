@@ -1,7 +1,6 @@
 <script lang="ts">
 	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
-	import FolderIcon from '@lucide/svelte/icons/folder';
-	import FolderOpenIcon from '@lucide/svelte/icons/folder-open';
+	import MessageSquareReplyIcon from '@lucide/svelte/icons/message-square-reply';
 	import { cn } from '$lib/utils.js';
 	import type { TreeViewFolderProps } from './types';
 
@@ -18,10 +17,8 @@
 	<Collapsible.Trigger class={cn('flex place-items-center gap-1', className)}>
 		{#if icon}
 			{@render icon({ name, open })}
-		{:else if open}
-			<FolderOpenIcon class="size-4" />
 		{:else}
-			<FolderIcon class="size-4" />
+			<MessageSquareReplyIcon class="size-4" />
 		{/if}
 		<span>{name}</span>
 	</Collapsible.Trigger>

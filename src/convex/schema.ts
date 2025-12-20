@@ -84,16 +84,12 @@ const feedLikes = defineTable({
 const feedComments = defineTable({
 	// reference to the feed being commented on
 	feedId: v.id('feed'),
-
 	// userId is the BetterAuth user ID (string) of the user who made the comment
 	userId: v.string(),
-
 	// reference to parent comment for nested replies (optional)
 	parentCommentId: v.optional(v.id('feedComments')),
-
 	// the comment text content
 	content: v.string(),
-
 	// timestamps
 	createdAt: v.number(),
 	updatedAt: v.optional(v.number())

@@ -2,10 +2,10 @@
 	import { Motion, AnimatePresence, useViewportScroll } from 'svelte-motion';
 	import { cn } from '$lib/utils.js';
 	import { Home, User, MessageCircle, LogIn } from '@lucide/svelte';
-	import type { ComponentType } from 'svelte';
 	import Button from '../button/button.svelte';
 	import ModeSwitch from '$lib/components/modules/interactive/ModeSwitch.svelte';
 	import LangSwitch from '$lib/components/modules/interactive/LangSwitch.svelte';
+	import { m } from '$lib/paraglide/messages.js';
 
 	const { scrollYProgress } = useViewportScroll();
 
@@ -15,17 +15,17 @@
 
 	const navItems = [
 		{
-			name: 'Home',
+			name: m.home(),
 			link: '/',
 			icon: Home
 		},
 		{
-			name: 'Feed',
+			name: m.feed(),
 			link: '/feed',
 			icon: MessageCircle
 		},
 		{
-			name: 'About',
+			name: m.about(),
 			link: '/about',
 
 			icon: User
@@ -87,7 +87,7 @@
 				class="relative rounded-full border border-neutral-500 text-sm font-medium  dark:border-red-600 "
 			>
 				<LogIn />
-				<span class="hidden text-sm sm:block">Account</span>
+				<span class="hidden text-sm sm:block">{m.account()}</span>
 				<!-- <span
 					class="absolute inset-x-0 -bottom-px mx-auto h-px w-1/2 bg-gradient-to-r from-transparent via-blue-500 to-transparent"
 				></span> -->

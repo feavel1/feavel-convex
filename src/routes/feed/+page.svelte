@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages.js';
 	import { api } from '$convex/_generated/api.js';
 	import { useQuery } from 'convex-svelte';
 	import FeedLikes from '$lib/components/feed-helpers/FeedLikes.svelte';
@@ -27,9 +28,21 @@
 
 	// Define the feed type tabs
 	const feedTypeTabs = [
-		{ value: 'article', label: 'Articles', description: 'View public article feeds' },
-		{ value: 'product', label: 'Products', description: 'View public product feeds' },
-		{ value: 'service', label: 'Services', description: 'View public service feeds' }
+		{
+			value: 'article',
+			label: m.civil_tiny_falcon_radiate(),
+			description: 'View public article feeds'
+		},
+		{
+			value: 'product',
+			label: m.aloof_funny_guppy_mop(),
+			description: 'View public product feeds'
+		},
+		{
+			value: 'service',
+			label: m.bland_due_jellyfish_mix(),
+			description: 'View public service feeds'
+		}
 	];
 
 	// Get the context from the layout
@@ -128,9 +141,9 @@
 <div class="mt-10 flex flex-1 flex-col">
 	<div class="flex-1 space-y-6 p-6 md:p-10">
 		<div>
-			<h2 class="text-xl font-bold tracking-tight">Public Feed</h2>
-			<p class="text-sm tracking-wide text-gray-600">
-				Browse feed that is of your choice, <br />change language 🌐 in floating bar ⬆️.
+			<h2 class="text-xl font-bold tracking-tight">{m.bald_extra_raven_grip()}</h2>
+			<p class="text-sm tracking-wide text-primary/70">
+				{m.home_gray_marten_hint()} <br />{m.factual_true_capybara_tear()}
 			</p>
 		</div>
 
@@ -247,7 +260,7 @@
 					<p class="mb-4 text-gray-600">
 						{feedTypeTabs.find((tab) => tab.value === activeTab)?.description}
 					</p>
-					<a href="/dashboard/edit-feed/new" class="text-sm text-blue-600 hover:underline">
+					<a href="/dashboard/edit-feed" class="text-sm text-blue-600 hover:underline">
 						Create Public Feed
 					</a>
 				</div>

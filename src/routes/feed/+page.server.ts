@@ -4,14 +4,12 @@ import { createConvexHttpClient } from '@mmailaender/convex-better-auth-svelte/s
 
 export const load: PageServerLoad = async ({ parent, locals }) => {
 	// Load parent data (session, user info)
-	const parentData = await parent();
 
 	// Get current user
 	const client = createConvexHttpClient({ token: locals.token });
 	const currentUser = await client.query(api.auth.getCurrentUser, {});
 
 	return {
-		...parentData,
 		currentUser
 	};
 };

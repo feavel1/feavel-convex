@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages.js';
 	// Shadcn-svelte components
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
@@ -226,8 +227,8 @@
 
 <Card.Root class="mb-6">
 	<Card.Header>
-		<Card.Title>Feed Settings</Card.Title>
-		<Card.Description>Configure your feed settings</Card.Description>
+		<Card.Title>{m.top_lost_stingray_heart()}</Card.Title>
+		<Card.Description>{m.every_fit_jannes_nudge()}</Card.Description>
 	</Card.Header>
 
 	<Card.Content>
@@ -245,7 +246,7 @@
 					</Select.Trigger>
 					<Select.Content>
 						<Select.Group>
-							<Select.Label>Feed Type</Select.Label>
+							<Select.Label>{m.simple_nimble_guppy_dig()}</Select.Label>
 							{#each feedTypeOptions as option (option.value)}
 								<Select.Item value={option.value} label={option.label}>
 									{option.label}
@@ -270,7 +271,7 @@
 					</Select.Trigger>
 					<Select.Content>
 						<Select.Group>
-							<Select.Label>Feed Language</Select.Label>
+							<Select.Label>{m.novel_ok_parakeet_arise()}</Select.Label>
 							{#each feedLanguageOptions as option (option.value)}
 								<Select.Item value={option.value} label={option.label}>
 									{option.label}
@@ -307,7 +308,7 @@
 			<!-- Feed Type Specific Meta Editor -->
 			<div class="space-y-4">
 				<Label class="text-sm font-semibold">Meta Information</Label>
-				<p class="text-sm text-muted-foreground">Enter metadata specific to your feed type</p>
+				<!-- <p class="text-sm text-muted-foreground">Enter metadata specific to your feed type</p>· -->
 
 				{#if localFeedType === 'article'}
 					<!-- Article Meta Fields -->

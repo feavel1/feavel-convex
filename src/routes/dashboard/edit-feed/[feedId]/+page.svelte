@@ -11,6 +11,10 @@
 	import CollaboratorManager from '$lib/components/feed-editor/CollaboratorManager.svelte';
 	import FeedTitleEditor from '$lib/components/feed-editor/FeedTitleEditor.svelte';
 
+	import { slugify } from 'transliteration';
+
+	console.log(slugify('你好'));
+
 	let { params } = $props();
 
 	// Get feedId from URL params reactively
@@ -93,14 +97,14 @@
 		// In the switch-case we're updating our boolean flags whenever the
 		// desired bound keys are pressed.
 		switch (event.key) {
-			case "Control":
+			case 'Control':
 				is_ctrl_down = true;
 				break;
-			case "Meta":  // Cmd key on Mac
+			case 'Meta': // Cmd key on Mac
 				is_meta_down = true;
 				break;
-			case "s":
-			case "S":
+			case 's':
+			case 'S':
 				is_s_down = true;
 				// Check if the key combination matches our save shortcut
 				// On Mac: Cmd+S, on Windows/Linux: Ctrl+S
@@ -120,14 +124,14 @@
 		// Just like our `keydown` handler, we need to update the boolean
 		// flags, but in the opposite direction.
 		switch (event.key) {
-			case "Control":
+			case 'Control':
 				is_ctrl_down = false;
 				break;
-			case "Meta":  // Cmd key on Mac
+			case 'Meta': // Cmd key on Mac
 				is_meta_down = false;
 				break;
-			case "s":
-			case "S":
+			case 's':
+			case 'S':
 				is_s_down = false;
 				break;
 		}
@@ -174,10 +178,7 @@
 </script>
 
 <!-- Add the keyboard event listeners to the window -->
-<svelte:window
-	on:keydown={on_key_down}
-	on:keyup={on_key_up}
-/>
+<svelte:window on:keydown={on_key_down} on:keyup={on_key_up} />
 
 <div class="container mx-auto py-8">
 	{#if isLoading}

@@ -84,6 +84,7 @@
 		"editorjs-multiblock-selection-plugin": "^0.1.2",
 		"editorjs-undo": "^2.0.28",
 		"svelte-motion": "^0.12.2",
-		"to-px": "^1.1.0"
+		"to-px": "^1.1.0",
+		"transliteration": "^2.6.0"
 	}
 }

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages.js';
+
 	import { useQuery, useConvexClient } from 'convex-svelte';
 	import { api } from '$convex/_generated/api.js';
 	import { goto } from '$app/navigation';
@@ -98,10 +100,10 @@
 	}
 </script>
 
-<div class="mt-10 flex-1 space-y-6 p-6 py-8 md:p-10">
+<div class="flex-1 space-y-6 p-6 py-8 md:p-10">
 	<div class="mb-6 flex items-center justify-between">
 		<div>
-			<h1 class="text-2xl font-bold tracking-tight">Edit Feeds</h1>
+			<h1 class="text-2xl font-bold tracking-tight">{m.sour_proof_camel_explore()}</h1>
 			<p class="text-muted-foreground">View and manage your feeds</p>
 		</div>
 		<Button variant="default" class="w-fit" disabled={creating} onclick={createNewFeed}>
@@ -205,19 +207,9 @@
 					</Card.Content>
 
 					<Card.Footer class="flex justify-between">
-						<Button
-							variant="outline"
-							onclick={() => goto(`/feed/${feed.slug}`)}
-							disabled={deleting}
-						>
-							View
-						</Button>
+						<Button variant="outline" href="/feed/{feed.slug}" disabled={deleting}>View</Button>
 						<div class="space-x-2">
-							<Button
-								variant="outline"
-								onclick={() => goto(`/dashboard/edit-feed/${feed._id}`)}
-								disabled={deleting}
-							>
+							<Button variant="outline" href="/dashboard/edit-feed/{feed._id}" disabled={deleting}>
 								Edit
 							</Button>
 							{#if deletingFeedId === feed._id}

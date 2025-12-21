@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages.js';
+
 	import * as Code from '$lib/components/ui/code';
 	import FeedLikes from '$lib/components/feed-helpers/FeedLikes.svelte';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
@@ -44,14 +46,14 @@
 		<h1 class="mb-4 text-3xl font-bold md:text-4xl">{feed.title}</h1>
 
 		<div class="mb-4 flex flex-wrap items-center text-sm">
-			<span class="mr-4">Created: {formatDate(feed.createdAt)}</span>
+			<span class="mr-4">{m.created()}: {formatDate(feed.createdAt)}</span>
 			{#if feed.updatedAt}
-				<span>Updated: {formatDate(feed.updatedAt)}</span>
+				<span>{m.updated()}: {formatDate(feed.updatedAt)}</span>
 			{/if}
 		</div>
 
 		<div class="flex flex-wrap items-center gap-3 text-sm">
-			<span
+			<!-- <span
 				class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"
 			>
 				{feed.type}
@@ -68,7 +70,7 @@
 				>
 					Private
 				</span>
-			{/if}
+			{/if} -->
 			<FeedLikes
 				feedId={feed._id}
 				likeCount={feed.likeCount}
@@ -172,7 +174,6 @@
 	<!-- Comment Section -->
 	<div class="mt-12 border-t pt-8">
 		<h2 class="mb-6 text-2xl font-bold">Comments</h2>
-
 		<CommentSection {feed} />
 	</div>
 </div>

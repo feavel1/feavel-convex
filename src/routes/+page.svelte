@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { m } from '$lib/paraglide/messages.js';
 	import BentoGrid from '$lib/components/ui/BentoGrid/BentoGrid.svelte';
 	import BentoGridItem from '$lib/components/ui/BentoGrid/BentoGridItem.svelte';
 	import EvervaultCard from '$lib/components/ui/EvervaultCard/EvervaultCard.svelte';
@@ -11,33 +12,32 @@
 	import TextRevealCard from '$lib/components/ui/TextRevealCard/TextRevealCard.svelte';
 	import TextRevealCardDescription from '$lib/components/ui/TextRevealCard/TextRevealCardDescription.svelte';
 	import TextRevealCardTitle from '$lib/components/ui/TextRevealCard/TextRevealCardTitle.svelte';
-	import { ClipboardCopy, File, FileSignature, Table } from '@lucide/svelte';
+	import { Computer, FileSignature, Music, ToolCase } from '@lucide/svelte';
 
 	const items = [
 		{
-			title: 'Web Dev Articles',
-			description:
-				'Recent works: am-was, feavel, svelte-stripe; Code snippets: RBAC, Editor.js, real-time chat app',
+			title: m.stock_trite_thrush_launch(),
+			description: m.brave_watery_ibex_grow(),
 			className: 'md:col-span-2',
-			icon: ClipboardCopy
+			icon: Computer
 		},
 		{
-			title: 'Music & Audio',
-			description: 'Artist music, film music, mixing & mastering, samples and tutorials',
+			title: m.shy_bright_jurgen_work(),
+			description: m.wacky_tired_snake_dance(),
 			className: 'md:col-span-1',
-			icon: File
+			icon: Music
 		},
 		{
-			title: 'Research & Language',
-			description: 'Law synergy research, language time research, grammar cases analysis',
+			title: m.grassy_weak_seal_exhale(),
+			description: m.this_yummy_robin_push(),
 			className: 'md:col-span-1',
 			icon: FileSignature
 		},
 		{
-			title: 'Tools & Setup',
-			description: 'AI prompts, Claude Code router, svelte-kit setup, proxy applications',
+			title: m.inner_nimble_hawk_jump(),
+			description: m.only_game_baboon_ripple(),
 			className: 'md:col-span-2',
-			icon: Table
+			icon: ToolCase
 		}
 	];
 </script>
@@ -48,7 +48,7 @@
 		id="hero-heading"
 		class="animate-fade-in-up mt-8 bg-gradient-to-br from-slate-300 to-slate-500 bg-clip-text py-4 text-center text-4xl font-medium tracking-tight text-transparent md:text-7xl"
 	>
-		Build web<br />with Фeavel
+		{m.royal_fit_hamster_roar()}
 	</h1>
 </LampEffect>
 
@@ -56,18 +56,20 @@
 <section class="py-20" aria-labelledby="highlights-heading">
 	<div class="container mx-auto max-w-4xl px-4">
 		<div class="mb-16 text-center">
-			<h2 id="highlights-heading" class="mb-4 text-3xl font-bold md:text-4xl">Featured Content</h2>
+			<h2 id="highlights-heading" class="mb-4 text-3xl font-bold md:text-4xl">
+				{m.heroic_day_mantis_fry()}
+			</h2>
 			<p class="mx-auto max-w-2xl text-muted-foreground">
-				Explore our diverse range of articles and resources
+				{m.busy_heroic_marlin_ask()}
 			</p>
 		</div>
 
 		<div class="flex flex-col items-center justify-center gap-6 md:flex-row">
 			<GlowingStarsBackgroundCard className="max-w-sm">
-				<GlowingStarsTitle>💁 Services</GlowingStarsTitle>
+				<GlowingStarsTitle>💁 {m.swift_awful_otter_find()}</GlowingStarsTitle>
 				<div class="flex items-end justify-between">
 					<GlowingStarsDescription>
-						Discover web dev, music, and research services.
+						{m.teary_candid_impala_treasure()}
 					</GlowingStarsDescription>
 					<div
 						class="flex h-8 w-8 items-center justify-center rounded-full bg-[hsla(0,0%,100%,.1)]"
@@ -98,10 +100,10 @@
 				<Icon class="absolute -top-3 -right-3 h-6 w-6 text-black dark:text-white" />
 				<Icon class="absolute -right-3 -bottom-3 h-6 w-6 text-black dark:text-white" />
 
-				<EvervaultCard text="Products" />
+				<EvervaultCard text="Hover" />
 
 				<h3 class="mt-6 text-lg font-medium text-black dark:text-white">
-					🎁 Hover to discover our product collection.
+					🎁 {m.direct_fluffy_crossbill_race()}
 				</h3>
 				<!-- <p
 				class="mt-4 rounded-full border border-black/[0.2] px-3 py-1 text-sm font-light text-black dark:border-white/[0.2] dark:text-white"
@@ -120,9 +122,11 @@
 >
 	<div class="container mx-auto px-4">
 		<div class="mb-16 text-center">
-			<h2 id="articles-heading" class="mb-4 text-3xl font-bold md:text-4xl">Articles & Content</h2>
+			<h2 id="articles-heading" class="mb-4 text-3xl font-bold md:text-4xl">
+				{m.white_mild_lionfish_enchant()}
+			</h2>
 			<p class="mx-auto max-w-2xl text-muted-foreground">
-				Recent works, research, and tutorials across web dev, music, and language research
+				{m.low_teal_cougar_tear()}
 			</p>
 		</div>
 
@@ -147,9 +151,11 @@
 >
 	<div class="container mx-auto max-w-2xl px-4">
 		<div class="mb-16 text-center">
-			<h2 id="cta-heading" class="mb-4 text-3xl font-bold md:text-4xl">Ready to Get Started?</h2>
+			<h2 id="cta-heading" class="mb-4 text-3xl font-bold md:text-4xl">
+				{m.slimy_zesty_husky_splash()}
+			</h2>
 			<p class="mx-auto max-w-xl text-muted-foreground">
-				Unleash your creativity with our powerful platform
+				{m.light_whole_toad_peek()}
 			</p>
 		</div>
 
@@ -158,10 +164,10 @@
 				text="Explore web dev, music & research content"
 				revealText="Discover articles, services & products!"
 			>
-				<TextRevealCardTitle>Explore Our Content</TextRevealCardTitle>
-				<TextRevealCardDescription
-					>Find resources on web development, music, and research.</TextRevealCardDescription
-				>
+				<TextRevealCardTitle>{m.ok_plain_hyena_tickle()}</TextRevealCardTitle>
+				<TextRevealCardDescription>
+					{m.spare_agent_lobster_leap()}
+				</TextRevealCardDescription>
 			</TextRevealCard>
 		</div>
 	</div>

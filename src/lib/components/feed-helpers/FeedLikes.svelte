@@ -2,7 +2,6 @@
 	import { api } from '$convex/_generated/api.js';
 	import { useConvexClient } from 'convex-svelte';
 	import Heart from '@lucide/svelte/icons/heart';
-	import { Button } from '$lib/components/ui/button/index.js';
 	import { toast } from 'svelte-sonner';
 	import type { Id } from '$convex/_generated/dataModel';
 
@@ -63,19 +62,17 @@
 	};
 </script>
 
-<Button
-	size="sm"
-	variant={isLiked ? 'default' : 'ghost'}
+<button
+	type="button"
+	class="flex items-center gap-1 cursor-pointer hover:opacity-80 {isSubmitting ? 'opacity-50' : ''}"
 	onclick={handleToggleLike}
-	disabled={isSubmitting}
-	class="gap-2"
 >
 	{#if isSubmitting}
 		<div
 			class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
 		></div>
 	{:else}
-		<Heart class="h-4 w-4 {isLiked ? 'fill-red-500 text-red-500' : ''}" />
+		<Heart class="h-4 w-4 {isLiked ? 'fill-red-500' : ''}" />
 	{/if}
-	{likeCount}
-</Button>
+	<span class="text-sm">{likeCount}</span>
+</button>

@@ -63,12 +63,11 @@
 	};
 </script>
 
-<Button
-	size="sm"
-	variant={isLiked ? 'default' : 'ghost'}
+<button
+	type="button"
+	class="flex cursor-pointer items-center gap-1 hover:opacity-80 {isSubmitting ? 'opacity-50' : ''}"
 	onclick={handleToggleLike}
 	disabled={isSubmitting}
-	class="gap-2"
 >
 	{#if isSubmitting}
 		<div
@@ -78,4 +77,4 @@
 		<Heart class="h-4 w-4 {isLiked ? 'fill-red-500 text-red-500' : ''}" />
 	{/if}
 	{likeCount}
-</Button>
+</button>

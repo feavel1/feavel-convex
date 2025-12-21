@@ -7,12 +7,7 @@
 	import { getContext } from 'svelte';
 	import { onMount } from 'svelte';
 
-	import { Button } from '$lib/components/ui/button/index.js';
-	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import * as Pagination from '$lib/components/ui/pagination/index.js';
-	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card/index.js';
-	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import CardFooter from '$lib/components/ui/card/card-footer.svelte';
 
 	// Define the feed state context type
 	type FeedState = {
@@ -40,12 +35,14 @@
 	// Get the context from the layout
 	const feedState: FeedState | undefined = getContext('feed:state');
 
+	// Remove the Separator import since we're not using it anymore
+
 	// Reactive state for the active tab (for type filtering)
 	let activeTab = $state('article');
 
 	// Pagination state variables
-	let currentPage = $state(1);
 	const perPage = 6; // Fixed at 6 per user request
+	let currentPage = $state(1);
 	let feedsCursor = $state<string | null>(null);
 	let cursorMap = $state(new Map<number, string | null>());
 
@@ -128,134 +125,133 @@
 	<title>Feeds | Feavel</title>
 </svelte:head>
 
-<div class="flex flex-1 flex-col">
+<div class="mt-10 flex flex-1 flex-col">
 	<div class="flex-1 space-y-6 p-6 md:p-10">
 		<div>
-			<h2 class="text-2xl font-bold tracking-tight">Public Feed</h2>
-			<p class="text-muted-foreground">Browse feed that is of your choice</p>
+			<h2 class="text-xl font-bold tracking-tight">Public Feed</h2>
+			<p class="text-sm tracking-wide text-gray-600">
+				Browse feed that is of your choice, <br />change language 🌐 in floating bar ⬆️.
+			</p>
 		</div>
 
-		<Separator />
-
-		<!-- Feed Type Tabs -->
-		<Tabs.Root bind:value={activeTab} class="space-y-6">
-			<Tabs.List class="grid w-full grid-cols-3">
+		<!-- Feed Type Navigation with Underline -->
+		<div class="space-y-6">
+			<nav class="flex space-x-6 border-b">
 				{#each feedTypeTabs as tab}
-					<Tabs.Trigger
-						value={tab.value}
-						class="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+					<button
+						type="button"
+						class="pb-2 text-sm font-medium {activeTab === tab.value
+							? 'border-b-2 border-black text-black dark:border-white dark:text-white'
+							: 'text-gray-500'}"
+						onclick={() => (activeTab = tab.value)}
 					>
 						{tab.label}
-					</Tabs.Trigger>
+					</button>
 				{/each}
-			</Tabs.List>
+			</nav>
 
-			<!-- Content for each tab -->
-			{#each feedTypeTabs as tab}
-				<Tabs.Content value={tab.value} class="space-y-6">
-					{#if feedsResponse.isLoading}
-						<div class="flex items-center justify-center py-12">
-							<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
-						</div>
-					{:else if feedsResponse.error}
-						<div class="py-12 text-center">
-							<p class="text-red-500">Error loading feeds: {feedsResponse.error.message}</p>
-						</div>
-					{:else if feeds && feeds.length > 0}
-						<div class="min-h-[50vh]">
-							<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-								{#each feeds as feed (feed._id)}
-									<Card class="overflow-hidden transition-shadow hover:shadow-md">
-										<CardHeader>
-											<CardTitle class="text-lg">
-												<a href={`/feed/${feed.slug}`} class="hover:underline">
-													{feed.title}
-												</a>
-											</CardTitle>
-											<div class="flex items-center gap-2 text-sm text-muted-foreground">
-												<span
-													class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-												>
-													{feed.type}
-												</span>
-												<span>{formatDate(feed.createdAt)}</span>
-											</div>
-										</CardHeader>
-										<CardContent class="grow pb-4">
-											<p class="line-clamp-2 text-sm text-muted-foreground">
-												{feed.content &&
-												Array.isArray(feed.content.blocks) &&
-												feed.content.blocks.length > 0
-													? feed.content.blocks
-															.slice(0, 2)
-															.map((block: any) => block.data?.text || '')
-															.filter((text: string) => text)
-															.join(' ')
-															.substring(0, 100) + '...'
-													: 'No content yet'}
-											</p>
-										</CardContent>
-										<CardFooter class="shrink-0 items-center justify-between">
-											<div class="flex items-center gap-2">
-												<FeedLikes
-													feedId={feed._id}
-													likeCount={feed.likeCount}
-													isLiked={feed.isLiked}
-													user={currentUser}
-												/>
-											</div>
-											<Button size="sm" variant="outline" href="/feed/{feed.slug}">
-												View Details
-											</Button>
-										</CardFooter>
-									</Card>
-								{/each}
+			{#if feedsResponse.isLoading}
+				<div class="flex items-center justify-center py-12">
+					<div class="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+				</div>
+			{:else if feedsResponse.error}
+				<div class="py-12 text-center">
+					<p class="text-red-600">Error loading feeds: {feedsResponse.error.message}</p>
+				</div>
+			{:else if feeds && feeds.length > 0}
+				<div class="min-h-[50vh]">
+					<div class="flex flex-col space-y-4">
+						{#each feeds as feed (feed._id)}
+							<div class="border-b p-3">
+								<div class="flex items-start justify-between">
+									<a
+										href={`/feed/${feed.slug}`}
+										class="text-lg font-medium tracking-tight hover:underline"
+									>
+										{feed.title}
+									</a>
+									<!-- <div class="flex items-center gap-2 text-sm text-gray-500">
+										<span class="rounded border px-1.5 py-0.5 text-xs">
+											{feed.type}
+										</span>
+										<span>{formatDate(feed.createdAt)}</span>
+									</div> -->
+								</div>
+								<p class="mt-1.5 line-clamp-2 text-sm text-gray-600">
+									{feed.content &&
+									Array.isArray(feed.content.blocks) &&
+									feed.content.blocks.length > 0
+										? feed.content.blocks
+												.slice(0, 2)
+												.map((block: any) => block.data?.text || '')
+												.filter((text: string) => text)
+												.join(' ')
+												.substring(0, 100) + '...'
+										: 'No content yet'}
+								</p>
+								<div class="mt-2 flex items-center justify-between text-sm">
+									<FeedLikes
+										feedId={feed._id}
+										likeCount={feed.likeCount}
+										isLiked={feed.isLiked}
+										user={currentUser}
+									/>
+									<a href="/feed/{feed.slug}" class="text-primary hover:underline">
+										View Details
+									</a>
+								</div>
 							</div>
-						</div>
-						<!-- Pagination -->
-						{#if totalCount > perPage}
-							<div class="mt-8 flex items-center justify-between">
-								<!-- <p class="text-sm text-muted-foreground">
-                Showing {startIndex} to {endIndex} of {totalCount} feeds
-              </p> -->
-								<Pagination.Root count={totalCount} {perPage} bind:page={currentPage}>
-									{#snippet children({ pages, currentPage: activePage })}
-										<Pagination.Content>
+						{/each}
+					</div>
+				</div>
+				<!-- Pagination -->
+				{#if totalCount > perPage}
+					<div class="mt-8 flex items-center justify-between">
+						<!--
+						<p class="text-sm text-muted-foreground">
+       Showing {startIndex} to {endIndex} of {totalCount} feeds
+      </p>
+      -->
+						<Pagination.Root count={totalCount} {perPage} bind:page={currentPage}>
+							{#snippet children({ pages, currentPage: activePage })}
+								<Pagination.Content>
+									<Pagination.Item>
+										<Pagination.PrevButton />
+									</Pagination.Item>
+									{#each pages as page (page.key)}
+										{#if page.type === 'ellipsis'}
 											<Pagination.Item>
-												<Pagination.PrevButton />
+												<Pagination.Ellipsis />
 											</Pagination.Item>
-											{#each pages as page (page.key)}
-												{#if page.type === 'ellipsis'}
-													<Pagination.Item>
-														<Pagination.Ellipsis />
-													</Pagination.Item>
-												{:else}
-													<Pagination.Item>
-														<Pagination.Link {page} isActive={activePage === page.value}>
-															{page.value}
-														</Pagination.Link>
-													</Pagination.Item>
-												{/if}
-											{/each}
+										{:else}
 											<Pagination.Item>
-												<Pagination.NextButton />
+												<Pagination.Link {page} isActive={activePage === page.value}>
+													{page.value}
+												</Pagination.Link>
 											</Pagination.Item>
-										</Pagination.Content>
-									{/snippet}
-								</Pagination.Root>
-							</div>
-						{/if}
-					{:else}
-						<div class="py-12 text-center">
-							<h3 class="mb-2 text-lg font-medium text-gray-900">
-								No {tab.label.toLowerCase()} found
-							</h3>
-							<p class="mb-4 text-muted-foreground">{tab.description}</p>
-							<Button href="/dashboard/edit-feed/new">Create Public Feed</Button>
-						</div>
-					{/if}
-				</Tabs.Content>
-			{/each}
-		</Tabs.Root>
+										{/if}
+									{/each}
+									<Pagination.Item>
+										<Pagination.NextButton />
+									</Pagination.Item>
+								</Pagination.Content>
+							{/snippet}
+						</Pagination.Root>
+					</div>
+				{/if}
+			{:else}
+				<div class="py-12 text-center">
+					<h3 class="mb-2 text-lg font-medium text-gray-800">
+						No {activeTab.toLowerCase()} found
+					</h3>
+					<p class="mb-4 text-gray-600">
+						{feedTypeTabs.find((tab) => tab.value === activeTab)?.description}
+					</p>
+					<a href="/dashboard/edit-feed/new" class="text-sm text-blue-600 hover:underline">
+						Create Public Feed
+					</a>
+				</div>
+			{/if}
+		</div>
 	</div>
 </div>

@@ -17,7 +17,7 @@
 </svelte:head>
 
 <!-- Main Content -->
-<div class="flex flex-1 flex-col">
+<div class="mt-10 flex flex-1 flex-col">
 	<div class="flex-1 space-y-6 p-6 md:p-10">
 		<div>
 			<h2 class="text-2xl font-bold tracking-tight">Settings</h2>

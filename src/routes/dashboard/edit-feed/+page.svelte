@@ -98,7 +98,7 @@
 	}
 </script>
 
-<div class="flex-1 space-y-6 p-6 py-8 md:p-10">
+<div class="mt-10 flex-1 space-y-6 p-6 py-8 md:p-10">
 	<div class="mb-6 flex items-center justify-between">
 		<div>
 			<h1 class="text-2xl font-bold tracking-tight">Edit Feeds</h1>

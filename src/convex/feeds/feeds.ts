@@ -44,7 +44,8 @@ export const createFeed = mutation({
 		language: v.optional(v.string()),
 		public: v.boolean(),
 		meta: v.optional(v.any()),
-		coverFileId: v.optional(v.id('_storage'))
+		coverFileId: v.optional(v.id('_storage')),
+		slug: v.optional(v.string())
 	},
 	handler: async (ctx, args) => {
 		const user = await authComponent.getAuthUser(ctx);
@@ -52,9 +53,14 @@ export const createFeed = mutation({
 			throw new Error('Authentication required');
 		}
 
-		// Generate slug from title
-		const baseSlug = generateSlug(args.title);
-		const uniqueSlug = await ensureUniqueSlug(ctx, baseSlug);
+		// Use provided slug if available, otherwise generate from title
+		let uniqueSlug;
+		if (args.slug) {
+			uniqueSlug = await ensureUniqueSlug(ctx, args.slug);
+		} else {
+			const baseSlug = generateSlug(args.title);
+			uniqueSlug = await ensureUniqueSlug(ctx, baseSlug);
+		}
 
 		const feedId = await ctx.db.insert('feed', {
 			createdBy: user._id,
@@ -84,7 +90,8 @@ export const updateFeed = mutation({
 		public: v.optional(v.boolean()),
 		meta: v.optional(v.any()),
 		coverFileId: v.optional(v.id('_storage')),
-		updatedAt: v.optional(v.number())
+		updatedAt: v.optional(v.number()),
+		slug: v.optional(v.string())
 	},
 	handler: async (ctx, args) => {
 		const user = await authComponent.getAuthUser(ctx);
@@ -115,8 +122,11 @@ export const updateFeed = mutation({
 		if (args.coverFileId !== undefined) updates.coverFileId = args.coverFileId;
 		updates.updatedAt = args.updatedAt || Date.now();
 
-		// If the title is being updated, also update the slug
-		if (args.title && args.title !== feed.title) {
+		// Handle slug updates: prioritize client-provided slug, otherwise generate from title if title changed
+		if (args.slug !== undefined) {
+			const uniqueSlug = await ensureUniqueSlug(ctx, args.slug);
+			updates.slug = uniqueSlug;
+		} else if (args.title && args.title !== feed.title) {
 			const baseSlug = generateSlug(args.title);
 			const uniqueSlug = await ensureUniqueSlug(ctx, baseSlug);
 			updates.slug = uniqueSlug;

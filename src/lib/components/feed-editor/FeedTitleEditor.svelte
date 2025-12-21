@@ -1,5 +1,16 @@
 <script lang="ts">
+	import { slugify } from 'transliteration';
+
 	let { feed, debouncedSave } = $props();
+
+	// Function to generate slug from title
+	const generateSlug = (title: string) => {
+		return slugify(title, {
+			lowercase: true,
+			separator: '-',
+			trim: true
+		});
+	};
 </script>
 
 <div class="mb-6">
@@ -10,6 +21,8 @@
 			const newTitle = (e.target as HTMLInputElement).value;
 			if (feed) {
 				feed.title = newTitle;
+				// Generate slug from the new title
+				feed.slug = generateSlug(newTitle);
 				debouncedSave();
 			}
 		}}

@@ -11,10 +11,6 @@
 	import CollaboratorManager from '$lib/components/feed-editor/CollaboratorManager.svelte';
 	import FeedTitleEditor from '$lib/components/feed-editor/FeedTitleEditor.svelte';
 
-	import { slugify } from 'transliteration';
-
-	console.log(slugify('你好'));
-
 	let { params } = $props();
 
 	// Get feedId from URL params reactively
@@ -55,6 +51,7 @@
 			const updateData = {
 				feedId: feed._id,
 				title: feed.title,
+				slug: feed.slug,
 				type: feed.type,
 				language: feed.language,
 				public: feed.public,

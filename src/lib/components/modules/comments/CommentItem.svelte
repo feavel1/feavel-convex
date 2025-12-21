@@ -3,6 +3,10 @@
 	import { useQuery, useConvexClient } from 'convex-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
+	import MessageSquareReplyIcon from '@lucide/svelte/icons/message-square-reply';
+	import PencilIcon from '@lucide/svelte/icons/pencil';
+	import Trash2Icon from '@lucide/svelte/icons/trash-2';
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import type { CommentProps } from './types';
 
 	let { comment, feedId, depth = 0 }: CommentProps = $props();
@@ -151,7 +155,8 @@
 			<span
 				role="button"
 				tabindex="0"
-				class="cursor-pointer text-sm text-gray-500 underline-offset-2 hover:underline"
+				class="cursor-pointer text-gray-500 hover:text-gray-700"
+				aria-label="Reply to comment"
 				onclick={() => {
 					if (user) {
 						showReplyForm = !showReplyForm;
@@ -169,13 +174,14 @@
 					}
 				}}
 			>
-				Reply
+				<MessageSquareReplyIcon size={16} />
 			</span>
 			{#if isOwnComment}
 				<span
 					role="button"
 					tabindex="0"
-					class="cursor-pointer text-sm text-gray-500 underline-offset-2 hover:underline"
+					class="cursor-pointer text-gray-500 hover:text-gray-700"
+					aria-label="Edit comment"
 					onclick={() => {
 						if (user) {
 							isEditing = true;
@@ -193,12 +199,13 @@
 						}
 					}}
 				>
-					Edit
+					<PencilIcon size={16} />
 				</span>
 				<span
 					role="button"
 					tabindex="0"
-					class="cursor-pointer text-sm text-gray-500 text-red-600 underline-offset-2 hover:text-red-700 hover:underline"
+					class="cursor-pointer text-red-500 hover:text-red-700"
+					aria-label="Delete comment"
 					onclick={() => {
 						if (user) {
 							handleDeleteComment();
@@ -216,18 +223,25 @@
 						}
 					}}
 				>
-					Delete
+					<Trash2Icon size={16} />
 				</span>
-			{:else if user}
-				<!-- Only show placeholder if user is logged in but not owner -->
-				<span class="cursor-not-allowed text-sm text-gray-500 opacity-50" aria-disabled="true">
-					Edit
-				</span>
+			{/if}
+			{#if comment.engagement.replyCount > 0}
 				<span
-					class="cursor-not-allowed text-sm text-gray-500 text-red-600 opacity-50"
-					aria-disabled="true"
+					role="button"
+					tabindex="0"
+					class="cursor-pointer text-gray-500 hover:text-gray-700"
+					aria-label={showChildren
+						? 'Hide replies'
+						: `Show ${comment.engagement.replyCount} replies`}
+					onclick={() => (showChildren = !showChildren)}
+					onkeypress={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') {
+							showChildren = !showChildren;
+						}
+					}}
 				>
-					Delete
+					<ChevronDownIcon size={16} class={showChildren ? 'rotate-180' : ''} />
 				</span>
 			{/if}
 		</div>
@@ -252,18 +266,9 @@
 	{/if}
 
 	<!-- Child comments -->
-	{#if comment.engagement.replyCount > 0}
-		<div class="mt-0">
-			<Button
-				type="button"
-				variant="ghost"
-				class="h-auto p-0 text-xs text-gray-500"
-				onclick={() => (showChildren = !showChildren)}
-			>
-				{showChildren ? '🫥 Hide replies' : `⬇️ Show replies (${comment.engagement.replyCount})`}
-			</Button>
-
-			{#if showChildren && childCommentsQuery && !childCommentsQuery.isLoading}
+	{#if comment.engagement.replyCount > 0 && showChildren}
+		<div class="mt-2">
+			{#if childCommentsQuery && !childCommentsQuery.isLoading}
 				<div class="mt-2 space-y-2">
 					{#each childCommentsQuery.data || [] as childComment}
 						{#await import('./CommentItem.svelte') then Component}
@@ -271,7 +276,7 @@
 						{/await}
 					{/each}
 				</div>
-			{:else if showChildren && childCommentsQuery && childCommentsQuery.isLoading}
+			{:else if childCommentsQuery && childCommentsQuery.isLoading}
 				<div class="p-2 text-sm text-gray-500">Loading replies...</div>
 			{/if}
 		</div>

@@ -2,7 +2,8 @@
 	import { useQuery, useConvexClient } from 'convex-svelte';
 	import { api } from '$convex/_generated/api.js';
 	import Editor from '$lib/components/feed-editor/Editor.svelte';
-	import type { Id, Doc } from '$convex/_generated/dataModel';
+	import * as Kbd from '$lib/components/ui/kbd/index.js';
+	import type { Id } from '$convex/_generated/dataModel';
 
 	// Feed editor components
 	import FeedSettingsCard from '$lib/components/feed-editor/FeedSettingsCard.svelte';
@@ -33,6 +34,105 @@
 	// Track if we're currently saving to prevent triggering additional saves during save operation
 	let isCurrentlySaving = $state(false);
 
+	// Track keyboard state for shortcut
+	let is_ctrl_down = $state(false);
+	let is_meta_down = $state(false); // For Cmd key on Mac
+	let is_s_down = $state(false);
+
+	// New function for immediate saving
+	async function immediateSave() {
+		if (!feed || isCurrentlySaving) return;
+
+		try {
+			isCurrentlySaving = true;
+			saving = true;
+			saveError = null;
+
+			const updateData = {
+				feedId: feed._id,
+				title: feed.title,
+				type: feed.type,
+				language: feed.language,
+				public: feed.public,
+				meta: feed.meta,
+				coverFileId: feed.coverFileId,
+				content: feed.content
+			};
+
+			await convexClient.mutation(api.feeds.feeds.updateFeed, updateData);
+		} catch (err: unknown) {
+			const error = err as Error;
+			saveError = error.message;
+			console.error('Update failed:', err);
+		} finally {
+			isCurrentlySaving = false;
+			saving = false;
+		}
+	}
+
+	function handleSaveShortcut() {
+		// Clear any existing auto-save timeout
+		if (saveTimeout) {
+			clearTimeout(saveTimeout);
+			saveTimeout = null;
+		}
+
+		// Trigger immediate save if not already saving
+		if (!isCurrentlySaving && feed) {
+			immediateSave();
+		}
+	}
+
+	function on_key_down(event: KeyboardEvent) {
+		// `keydown` event is fired while the physical key is held down.
+
+		// Assuming you only want to handle the first press, we early
+		// return to skip.
+		if (event.repeat) return;
+
+		// In the switch-case we're updating our boolean flags whenever the
+		// desired bound keys are pressed.
+		switch (event.key) {
+			case "Control":
+				is_ctrl_down = true;
+				break;
+			case "Meta":  // Cmd key on Mac
+				is_meta_down = true;
+				break;
+			case "s":
+			case "S":
+				is_s_down = true;
+				// Check if the key combination matches our save shortcut
+				// On Mac: Cmd+S, on Windows/Linux: Ctrl+S
+				// Only trigger if both modifier and S key are currently pressed
+				if ((is_ctrl_down || is_meta_down) && is_s_down) {
+					event.preventDefault(); // Prevent browser's default save behavior
+					handleSaveShortcut();
+				}
+				break;
+		}
+	}
+
+	function on_key_up(event: KeyboardEvent) {
+		// `keyup` is the reverse, it fires whenever the physical key was let
+		// go after being held down
+
+		// Just like our `keydown` handler, we need to update the boolean
+		// flags, but in the opposite direction.
+		switch (event.key) {
+			case "Control":
+				is_ctrl_down = false;
+				break;
+			case "Meta":  // Cmd key on Mac
+				is_meta_down = false;
+				break;
+			case "s":
+			case "S":
+				is_s_down = false;
+				break;
+		}
+	}
+
 	// Function to save the feed with debouncing
 	function debouncedSave() {
 		if (!feed || isCurrentlySaving) return;
@@ -42,7 +142,7 @@
 			clearTimeout(saveTimeout);
 		}
 
-		// Set a new timeout to save after 8 seconds of inactivity
+		// Set a new timeout to save after 15 seconds of inactivity
 		saveTimeout = setTimeout(async () => {
 			try {
 				isCurrentlySaving = true;
@@ -69,9 +169,15 @@
 				isCurrentlySaving = false;
 				saving = false;
 			}
-		}, 8000); // 8 second debounce
+		}, 15000); // 15 second debounce
 	}
 </script>
+
+<!-- Add the keyboard event listeners to the window -->
+<svelte:window
+	on:keydown={on_key_down}
+	on:keyup={on_key_up}
+/>
 
 <div class="container mx-auto py-8">
 	{#if isLoading}
@@ -106,11 +212,16 @@
 			</div>
 		{/if}
 
-		<div class="mb-4 flex items-center">
+		<div class="mb-4 flex items-center justify-between">
 			<span class="mr-4 text-sm text-gray-500">Status: {saving ? 'Saving...' : 'Saved'}</span>
 			{#if saving}
 				<div class="h-4 w-4 animate-spin rounded-full border-b-2 border-blue-500"></div>
 			{/if}
+			<div class="text-sm text-muted-foreground">
+				<Kbd.Group>
+					<Kbd.Root>Ctrl + S</Kbd.Root>
+				</Kbd.Group>
+			</div>
 		</div>
 
 		<Editor

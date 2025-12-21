@@ -7,9 +7,9 @@
 
 	// Language mapping with flag emojis and full names
 	const languageInfo = {
-		'en': { name: 'English', flag: '🇺🇸' },
-		'zh': { name: '中文', flag: '🇨🇳' },
-		'ru': { name: 'Русский', flag: '🇷🇺' }
+		en: { name: 'English', flag: '🇺🇸' },
+		zh: { name: '中文', flag: '🇨🇳' },
+		ru: { name: 'Русский', flag: '🇷🇺' }
 	};
 
 	// Get the current locale
@@ -26,7 +26,7 @@
 <DropdownMenu.Root>
 	<DropdownMenu.Trigger>
 		{#snippet child({ props })}
-			<Button {...props} variant="ghost" size="icon">
+			<Button {...props} variant="ghost" size="icon" class="rounded-2xl">
 				<Globe class="size-4" />
 				<span class="sr-only">Switch language</span>
 			</Button>

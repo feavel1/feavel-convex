@@ -69,7 +69,12 @@
 					Private
 				</span>
 			{/if}
-			<FeedLikes feedId={feed._id} likeCount={feed.likeCount} isLiked={feed.isLiked} />
+			<FeedLikes
+				feedId={feed._id}
+				likeCount={feed.likeCount}
+				isLiked={feed.isLiked}
+				user={props.data.currentUser}
+			/>
 		</div>
 	</div>
 	<Separator class="mb-4" />

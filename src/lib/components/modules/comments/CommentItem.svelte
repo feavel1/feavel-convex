@@ -7,6 +7,7 @@
 	import PencilIcon from '@lucide/svelte/icons/pencil';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import CommentLikes from './CommentLikes.svelte';
 	import type { CommentProps } from './types';
 
 	let { comment, feedId, depth = 0 }: CommentProps = $props();
@@ -152,6 +153,12 @@
 	<div class="mt-2 flex items-center justify-between">
 		<span class="text-xs text-gray-500">{formatDate(comment.createdAt)}</span>
 		<div class="ml-auto flex items-center gap-2">
+			<CommentLikes
+				commentId={comment._id}
+				likeCount={comment.engagement.likeCount}
+				isLiked={comment.engagement.isLiked}
+				user={user}
+			/>
 			<span
 				role="button"
 				tabindex="0"

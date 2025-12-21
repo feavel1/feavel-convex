@@ -98,11 +98,27 @@ const feedComments = defineTable({
 	.index('by_feed_and_created_at', ['feedId', 'createdAt']) // For chronological comments
 	.index('by_parent_comment', ['parentCommentId']); // For retrieving replies to comments
 
+// Define the commentLikes table for tracking comment likes
+const commentLikes = defineTable({
+	// reference to the comment that was liked
+	commentId: v.id('feedComments'),
+
+	// userId is the BetterAuth user ID (string) of the user who liked the comment
+	userId: v.string(),
+
+	// timestamp when the like was created
+	createdAt: v.number()
+})
+	.index('by_comment_and_user', ['commentId', 'userId']) // For checking if a user already liked a comment
+	.index('by_comment', ['commentId']) // For counting likes per comment
+	.index('by_user', ['userId']); // For retrieving user's likes
+
 // Combine all tables in the schema
 export default defineSchema({
 	// ...betterAuthTables, // Include Better Auth tables
 	feed,
 	feedCollaborators,
 	feedLikes,
-	feedComments
+	feedComments,
+	commentLikes
 });

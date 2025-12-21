@@ -52,6 +52,10 @@
 	// Get current locale from paraglide
 	let currentLocale = $derived(getLocale());
 
+	// Get props and extract user
+	const props = $props();
+	const currentUser = $derived(props.data.currentUser);
+
 	// Initialize state from context on mount
 	onMount(() => {
 		if (feedState) {
@@ -197,6 +201,7 @@
 													feedId={feed._id}
 													likeCount={feed.likeCount}
 													isLiked={feed.isLiked}
+													user={currentUser}
 												/>
 											</div>
 											<Button size="sm" variant="outline" href="/feed/{feed.slug}">

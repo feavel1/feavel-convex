@@ -237,7 +237,109 @@ export const getComments = query({
 	}
 });
 
-// New function to get top-level comments with user information and engagement data
+// Add a like to a comment
+export const addCommentLike = mutation({
+	args: {
+		commentId: v.id('feedComments')
+	},
+	returns: v.id('commentLikes'),
+	handler: async (ctx, args) => {
+		// Get the authenticated user
+		const user = await authComponent.getAuthUser(ctx);
+		if (!user) {
+			throw new Error('User not authenticated');
+		}
+
+		// Check if the comment exists
+		const comment = await ctx.db.get(args.commentId);
+		if (!comment) {
+			throw new Error('Comment not found');
+		}
+
+		// Check if user has permission to like the comment (must have permission to view the feed)
+		const feed = await ctx.db.get(comment.feedId);
+		if (!feed) {
+			throw new Error('Feed not found');
+		}
+
+		if (!feed.public) {
+			// For private feeds, check if the user is the creator or a collaborator
+			if (!user._id) {
+				throw new Error('User ID not available');
+			}
+			const isCreator = feed.createdBy === user._id;
+			if (!isCreator) {
+				const collaborator = await ctx.db
+					.query('feedCollaborators')
+					.withIndex('feedId_userId', (q) => q.eq('feedId', comment.feedId).eq('userId', user._id))
+					.unique();
+				if (!collaborator) {
+					throw new Error('User does not have permission to like comments on this feed');
+				}
+			}
+		}
+
+		// Check if the user already liked this comment
+		if (!user._id) {
+			throw new Error('User ID not available');
+		}
+		const existingLike = await ctx.db
+			.query('commentLikes')
+			.withIndex('by_comment_and_user', (q) => q.eq('commentId', args.commentId).eq('userId', user._id))
+			.unique();
+
+		if (existingLike) {
+			// If already liked, return the existing like ID
+			return existingLike._id;
+		}
+
+		// Create the like
+		if (!user._id) {
+			throw new Error('User ID not available');
+		}
+		const likeId = await ctx.db.insert('commentLikes', {
+			commentId: args.commentId,
+			userId: user._id,
+			createdAt: Date.now()
+		});
+
+		return likeId;
+	}
+});
+
+// Remove a like from a comment
+export const removeCommentLike = mutation({
+	args: {
+		commentId: v.id('feedComments')
+	},
+	returns: v.boolean(),
+	handler: async (ctx, args) => {
+		// Get the authenticated user
+		const user = await authComponent.getAuthUser(ctx);
+		if (!user) {
+			throw new Error('User not authenticated');
+		}
+
+		// Find the like record
+		if (!user._id) {
+			throw new Error('User ID not available');
+		}
+		const like = await ctx.db
+			.query('commentLikes')
+			.withIndex('by_comment_and_user', (q) => q.eq('commentId', args.commentId).eq('userId', user._id))
+			.unique();
+
+		if (!like) {
+			return false; // No like found to remove
+		}
+
+		// Delete the like
+		await ctx.db.delete(like._id);
+		return true;
+	}
+});
+
+// New function to get top-level comments with user information and engagement data (updated with actual like counts)
 export const getTopLevelCommentsWithUserInfo = query({
 	args: {
 		feedId: v.id('feed')
@@ -305,6 +407,9 @@ export const getTopLevelCommentsWithUserInfo = query({
 
 		// console.log(comments);
 
+		// Get current user for like status
+		const user = await authComponent.getAuthUser(ctx).catch(() => null);
+
 		// Process each comment to include user info and engagement data
 		const commentsWithInfo = await Promise.all(
 			comments.map(async (comment) => {
@@ -326,9 +431,22 @@ export const getTopLevelCommentsWithUserInfo = query({
 					.collect()
 					.then((replies) => replies.length);
 
-				// Count likes for this comment (assuming there's a commentLikes table or similar)
-				// For now, just set to 0 since we don't have a likes table for comments yet
-				const likeCount = 0;
+				// Count likes for this comment
+				const commentLikes = await ctx.db
+					.query('commentLikes')
+					.withIndex('by_comment', (q) => q.eq('commentId', comment._id))
+					.collect();
+				const likeCount = commentLikes.length;
+
+				// Check if current user liked this comment
+				let isLiked = false;
+				if (user && user._id) {
+					const userLike = await ctx.db
+						.query('commentLikes')
+						.withIndex('by_comment_and_user', (q) => q.eq('commentId', comment._id).eq('userId', user._id))
+						.unique();
+					isLiked = !!userLike;
+				}
 
 				return {
 					...comment,
@@ -339,7 +457,8 @@ export const getTopLevelCommentsWithUserInfo = query({
 					},
 					engagement: {
 						likeCount,
-						replyCount
+						replyCount,
+						isLiked  // Add the isLiked status
 					}
 				};
 			})
@@ -349,7 +468,7 @@ export const getTopLevelCommentsWithUserInfo = query({
 	}
 });
 
-// New function to get child comments with user information and engagement data for a specific parent
+// New function to get child comments with user information and engagement data for a specific parent (updated with actual like counts)
 export const getChildCommentsWithUserInfo = query({
 	args: {
 		parentCommentId: v.id('feedComments')
@@ -418,6 +537,9 @@ export const getChildCommentsWithUserInfo = query({
 			.order('desc')
 			.collect();
 
+		// Get current user for like status
+		const user = await authComponent.getAuthUser(ctx).catch(() => null);
+
 		// Process each comment to include user info and engagement data
 		const commentsWithInfo = await Promise.all(
 			comments.map(async (comment) => {
@@ -440,7 +562,21 @@ export const getChildCommentsWithUserInfo = query({
 					.then((replies) => replies.length);
 
 				// Count likes for this comment
-				const likeCount = 0;
+				const commentLikes = await ctx.db
+					.query('commentLikes')
+					.withIndex('by_comment', (q) => q.eq('commentId', comment._id))
+					.collect();
+				const likeCount = commentLikes.length;
+
+				// Check if current user liked this comment
+				let isLiked = false;
+				if (user && user._id) {
+					const userLike = await ctx.db
+						.query('commentLikes')
+						.withIndex('by_comment_and_user', (q) => q.eq('commentId', comment._id).eq('userId', user._id))
+						.unique();
+					isLiked = !!userLike;
+				}
 
 				return {
 					...comment,
@@ -451,7 +587,8 @@ export const getChildCommentsWithUserInfo = query({
 					},
 					engagement: {
 						likeCount,
-						replyCount
+						replyCount,
+						isLiked  // Add the isLiked status
 					}
 				};
 			})

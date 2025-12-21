@@ -14,6 +14,9 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const client = createConvexHttpClient({ token: locals.token });
 
 	try {
+		// Get current user
+		const currentUser = await client.query(api.auth.getCurrentUser, {});
+
 		// Use Convex's server-side query to fetch the feed by slug using unified function
 		const result = await client.query(api.feeds.feeds.unifiedFeedQuery, {
 			slug
@@ -27,9 +30,10 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			throw error(404, 'Feed not found');
 		}
 
-		// Return the feed data to the client component
+		// Return the feed data and user to the client component
 		return {
-			feed
+			feed,
+			currentUser
 		};
 	} catch (err) {
 		// Handle permission errors specifically

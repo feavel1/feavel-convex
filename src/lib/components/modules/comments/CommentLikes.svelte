@@ -6,14 +6,14 @@
 	import { toast } from 'svelte-sonner';
 	import type { Id } from '$convex/_generated/dataModel';
 
-	// Define props - now include like data directly
+	// Define props - include like data directly
 	let {
-		feedId,
+		commentId,
 		likeCount: initialLikeCount,
 		isLiked: initialIsLiked,
 		user
 	} = $props<{
-		feedId: Id<'feed'>;
+		commentId: Id<'feedComments'>;
 		likeCount: number;
 		isLiked: boolean;
 		user: any; // User type will be passed from parent component
@@ -33,7 +33,7 @@
 
 		// Check if user is authenticated
 		if (!user) {
-			toast.error('Please log in to like this feed');
+			toast.error('Please log in to like this comment');
 			return;
 		}
 
@@ -47,10 +47,10 @@
 		try {
 			if (newIsLiked) {
 				// Add like
-				await client.mutation(api.feeds.likes.addLike, { feedId });
+				await client.mutation(api.feeds.comments.addCommentLike, { commentId });
 			} else {
 				// Remove like
-				await client.mutation(api.feeds.likes.removeLike, { feedId });
+				await client.mutation(api.feeds.comments.removeCommentLike, { commentId });
 			}
 		} catch (error) {
 			console.error('Error toggling like:', error);

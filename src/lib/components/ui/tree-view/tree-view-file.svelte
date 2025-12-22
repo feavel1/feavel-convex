@@ -3,7 +3,14 @@
 	import { cn } from '$lib/utils.js';
 	import type { TreeViewFileProps } from './types';
 
-	let { name, icon, children, type = 'button', class: className, ...rest }: TreeViewFileProps = $props();
+	let {
+		name,
+		icon,
+		children,
+		type = 'button',
+		class: className,
+		...rest
+	}: TreeViewFileProps = $props();
 </script>
 
 <div class="flex flex-col">
@@ -16,7 +23,7 @@
 		<span>{name}</span>
 	</button>
 	{#if children}
-		<div class="ml-4 mt-2">
+		<div class="mt-2 ml-4">
 			{@render children?.()}
 		</div>
 	{/if}

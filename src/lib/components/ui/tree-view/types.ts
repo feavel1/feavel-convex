@@ -16,5 +16,4 @@ export type TreeViewFilePropsWithoutHTML = WithChildren<{
 	icon?: Snippet<[{ name: string }]>;
 }>;
 
-export type TreeViewFileProps = HTMLButtonAttributes &
-	TreeViewFilePropsWithoutHTML;
+export type TreeViewFileProps = HTMLButtonAttributes & TreeViewFilePropsWithoutHTML;

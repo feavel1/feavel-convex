@@ -285,7 +285,9 @@ export const addCommentLike = mutation({
 		}
 		const existingLike = await ctx.db
 			.query('commentLikes')
-			.withIndex('by_comment_and_user', (q) => q.eq('commentId', args.commentId).eq('userId', user._id))
+			.withIndex('by_comment_and_user', (q) =>
+				q.eq('commentId', args.commentId).eq('userId', user._id)
+			)
 			.unique();
 
 		if (existingLike) {
@@ -326,7 +328,9 @@ export const removeCommentLike = mutation({
 		}
 		const like = await ctx.db
 			.query('commentLikes')
-			.withIndex('by_comment_and_user', (q) => q.eq('commentId', args.commentId).eq('userId', user._id))
+			.withIndex('by_comment_and_user', (q) =>
+				q.eq('commentId', args.commentId).eq('userId', user._id)
+			)
 			.unique();
 
 		if (!like) {
@@ -403,7 +407,9 @@ export const getTopLevelCommentsWithUserInfo = query({
 			.collect();
 
 		// Filter for top-level comments (those with unset parentCommentId field)
-		const comments = allComments.filter(comment => comment.parentCommentId === undefined || comment.parentCommentId === null);
+		const comments = allComments.filter(
+			(comment) => comment.parentCommentId === undefined || comment.parentCommentId === null
+		);
 
 		// console.log(comments);
 
@@ -443,7 +449,9 @@ export const getTopLevelCommentsWithUserInfo = query({
 				if (user && user._id) {
 					const userLike = await ctx.db
 						.query('commentLikes')
-						.withIndex('by_comment_and_user', (q) => q.eq('commentId', comment._id).eq('userId', user._id))
+						.withIndex('by_comment_and_user', (q) =>
+							q.eq('commentId', comment._id).eq('userId', user._id)
+						)
 						.unique();
 					isLiked = !!userLike;
 				}
@@ -458,7 +466,7 @@ export const getTopLevelCommentsWithUserInfo = query({
 					engagement: {
 						likeCount,
 						replyCount,
-						isLiked  // Add the isLiked status
+						isLiked // Add the isLiked status
 					}
 				};
 			})
@@ -573,7 +581,9 @@ export const getChildCommentsWithUserInfo = query({
 				if (user && user._id) {
 					const userLike = await ctx.db
 						.query('commentLikes')
-						.withIndex('by_comment_and_user', (q) => q.eq('commentId', comment._id).eq('userId', user._id))
+						.withIndex('by_comment_and_user', (q) =>
+							q.eq('commentId', comment._id).eq('userId', user._id)
+						)
 						.unique();
 					isLiked = !!userLike;
 				}
@@ -588,7 +598,7 @@ export const getChildCommentsWithUserInfo = query({
 					engagement: {
 						likeCount,
 						replyCount,
-						isLiked  // Add the isLiked status
+						isLiked // Add the isLiked status
 					}
 				};
 			})

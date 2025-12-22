@@ -64,7 +64,7 @@
 
 <button
 	type="button"
-	class="flex items-center gap-1 cursor-pointer hover:opacity-80 {isSubmitting ? 'opacity-50' : ''}"
+	class="flex cursor-pointer items-center gap-1 hover:opacity-80 {isSubmitting ? 'opacity-50' : ''}"
 	onclick={handleToggleLike}
 >
 	{#if isSubmitting}

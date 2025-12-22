@@ -157,7 +157,7 @@
 				commentId={comment._id}
 				likeCount={comment.engagement.likeCount}
 				isLiked={comment.engagement.isLiked}
-				user={user}
+				{user}
 			/>
 			<span
 				role="button"

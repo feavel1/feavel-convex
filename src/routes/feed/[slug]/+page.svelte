@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { m } from '$lib/paraglide/messages.js';
+	import FeedMetadata from '$lib/components/feed-helpers/FeedMetadata.svelte';
 
 	import * as Code from '$lib/components/ui/code';
 	import FeedLikes from '$lib/components/feed-helpers/FeedLikes.svelte';
@@ -24,17 +24,6 @@
 	const props = $props();
 	const feed = $derived(props.data.feed);
 
-	// Format date for display
-	function formatDate(date: number): string {
-		return new Date(date).toLocaleDateString('en-US', {
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
-	}
-
 	// Type guard to check if content is Editor.js format
 	function isEditorJSContent(content: any): content is EditorJSContent {
 		return content && Array.isArray(content.blocks);
@@ -42,17 +31,12 @@
 </script>
 
 <div class="container mx-auto max-w-4xl py-8">
-	<div class="mb-8">
+	<div class="">
 		<h1 class="mb-4 text-3xl font-bold md:text-4xl">{feed.title}</h1>
+		<!-- Metadata Section -->
+		<FeedMetadata {feed} viewMode="detail" />
 
-		<div class="mb-4 flex flex-wrap items-center text-sm">
-			<span class="mr-4">{m.created()}: {formatDate(feed.createdAt)}</span>
-			{#if feed.updatedAt}
-				<span>{m.updated()}: {formatDate(feed.updatedAt)}</span>
-			{/if}
-		</div>
-
-		<div class="flex flex-wrap items-center gap-3 text-sm">
+		<div class="mt-2 flex flex-wrap items-center gap-3 text-sm">
 			<!-- <span
 				class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800"
 			>
@@ -79,7 +63,7 @@
 			/>
 		</div>
 	</div>
-	<Separator class="mb-4" />
+	<Separator class="my-4" />
 	<!-- Display feed content -->
 	<div class="prose max-w-none">
 		{#if isEditorJSContent(feed.content) && feed.content.blocks && feed.content.blocks.length > 0}

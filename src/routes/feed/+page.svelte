@@ -3,6 +3,8 @@
 	import { api } from '$convex/_generated/api.js';
 	import { useQuery } from 'convex-svelte';
 	import FeedLikes from '$lib/components/feed-helpers/FeedLikes.svelte';
+	import FeedMetadata from '$lib/components/feed-helpers/FeedMetadata.svelte';
+	import FeedMetadataCompact from '$lib/components/feed-helpers/FeedMetadataCompact.svelte';
 	import { getLocale } from '$lib/paraglide/runtime.js';
 
 	import { getContext } from 'svelte';
@@ -139,7 +141,7 @@
 </svelte:head>
 
 <div class="mt-10 flex flex-1 flex-col">
-	<div class="flex-1 space-y-6 p-6 md:p-10">
+	<div class="flex-1 space-y-6">
 		<div>
 			<h2 class="text-xl font-bold tracking-tight">{m.bald_extra_raven_grip()}</h2>
 			<p class="text-sm tracking-wide text-primary/70">
@@ -202,6 +204,7 @@
 												.substring(0, 100) + '...'
 										: 'No content yet'}
 								</p>
+								<!-- <FeedMetadata {feed} viewMode="list" /> -->
 								<div class="mt-2 flex items-center justify-between text-sm">
 									<FeedLikes
 										feedId={feed._id}
@@ -209,9 +212,7 @@
 										isLiked={feed.isLiked}
 										user={currentUser}
 									/>
-									<a href="/feed/{feed.slug}" class="text-primary hover:underline">
-										View Details
-									</a>
+									<FeedMetadataCompact {feed} />
 								</div>
 							</div>
 						{/each}

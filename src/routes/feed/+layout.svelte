@@ -24,4 +24,6 @@
 	});
 </script>
 
-{@render children()}
+<div class="p-6 md:p-10">
+	{@render children()}
+</div>

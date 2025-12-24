@@ -126,7 +126,8 @@
 							lichessStudy: {
 								regex:
 									/^https?:\/\/lichess\.org\/study\/([a-zA-Z0-9]+\/[a-zA-Z0-9]+)(?:[\/?#].*)?$/,
-								embedUrl: 'https://lichess.org/study/embed/<%= remote_id %>?theme=green',
+								embedUrl:
+									'https://lichess.org/study/embed/<%= remote_id %>?theme=ic&pieceSet=maestro&bg=light',
 								html: '<iframe style="width: 100%; aspect-ratio: 4/3;" frameborder="0" allowtransparency="true"></iframe>',
 
 								id: (groups) => groups[0] // Extract study path like "XtFCFYlM/wIViDD8c"

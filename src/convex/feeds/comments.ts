@@ -1,9 +1,7 @@
 import { mutation, query } from '../_generated/server';
 import { v } from 'convex/values';
-import type { Doc, Id } from '../_generated/dataModel';
 import { authComponent } from '../auth';
 import { paginationOptsValidator } from 'convex/server';
-import { internal } from '../_generated/api';
 
 // Add a comment to a feed
 export const addComment = mutation({

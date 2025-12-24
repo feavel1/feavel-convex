@@ -7,7 +7,6 @@
 	import { toast } from 'svelte-sonner';
 	import { api } from '$convex/_generated/api.js';
 	import { useConvexClient } from 'convex-svelte';
-	import { Upload } from '@lucide/svelte';
 
 	interface Props {
 		user: {
@@ -19,66 +18,76 @@
 
 	let { user }: Props = $props();
 
-	let name = $derived(user?.name || '');
-	let image = $derived(user?.image || '');
 	let isLoading = $state(false);
-	let selectedFile = $state<File | null>(null);
 	let fileInput = $state<HTMLInputElement>();
+	let name = $state('');
+	let image = $state('');
 
 	const convexClient = useConvexClient();
 
 	// Update reactive values when user changes
 	$effect(() => {
 		if (user) {
-			name = user.name || '';
-			image = user.image || '';
+			name = user?.name || '';
+			image = user?.image || '';
 		}
 	});
 
-	function handleFileSelect(e: Event) {
+	// Consistent error handling function
+	function handleOperationError(error: unknown, defaultMessage: string = 'Operation failed') {
+		const message = error instanceof Error ? error.message : defaultMessage;
+		toast.error(message);
+		console.error(defaultMessage, error);
+		return message;
+	}
+
+	async function handleUploadImage(e: Event) {
 		const target = e.target as HTMLInputElement;
 		const file = target.files?.[0];
 
-		if (file) {
-			// Validate file type
-			if (!file.type.startsWith('image/')) {
-				toast.error('Please select an image file');
-				return;
-			}
+		if (!file) return;
 
-			// Validate file size (max 2MB)
-			if (file.size > 2 * 1024 * 1024) {
-				toast.error('Image must be less than 2MB');
-				return;
-			}
-
-			selectedFile = file;
+		// Validate file type
+		if (!file.type.startsWith('image/')) {
+			toast.error('Please select an image file');
+			return;
 		}
-	}
 
-	async function handleUploadImage() {
-		if (!selectedFile) return;
+		// Validate file size (max 10MB based on validation.ts)
+		if (file.size > 10 * 1024 * 1024) {
+			toast.error('Image must be less than 10MB');
+			return;
+		}
 
 		isLoading = true;
 		try {
-			// Step 1: Generate upload URL
-			const uploadUrl = await convexClient.mutation(api.storage.generateUploadUrl, {});
+			// Get upload URL from the mutation
+			const { url, key } = await convexClient.mutation(api.cfstorage.genAvatarUploadURL, {});
 
-			// Step 2: Upload file to Convex storage
-			const result = await fetch(uploadUrl, {
-				method: 'POST',
-				headers: { 'Content-Type': selectedFile.type },
-				body: selectedFile
+			// Upload file directly to R2 using fetch
+			const result = await fetch(url, {
+				method: 'PUT',
+				headers: { 'Content-Type': file.type },
+				body: file
 			});
 
-			const { storageId } = await result.json();
+			console.log(result);
 
-			// Step 3: Get the proper URL from Convex
-			const imageUrl = await convexClient.mutation(api.storage.getImageUrl, { storageId });
+			if (!result.ok) {
+				throw new Error('Upload to storage failed');
+			}
 
-			// Step 4: Update the image state
-			image = imageUrl || '';
-			selectedFile = null;
+			// Get the decorated URL for the uploaded image
+			const decoratedUrl = `https://storage.feavel.com/${key}`;
+
+			// Update the user profile with the new avatar URL
+			await authClient.updateUser({
+				name: name,
+				image: decoratedUrl
+			});
+
+			// Update the local state
+			image = decoratedUrl;
 
 			// Reset file input
 			if (fileInput) {
@@ -87,8 +96,7 @@
 
 			toast.success('Image uploaded successfully');
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Failed to upload image';
-			toast.error(message);
+			handleOperationError(error, 'Failed to upload image');
 		} finally {
 			isLoading = false;
 		}
@@ -105,8 +113,7 @@
 			image = '';
 			toast.success('Profile picture removed');
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Failed to remove image';
-			toast.error(message);
+			handleOperationError(error, 'Failed to remove image');
 		} finally {
 			isLoading = false;
 		}
@@ -124,8 +131,7 @@
 
 			toast.success('Profile updated successfully');
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Failed to update profile';
-			toast.error(message);
+			handleOperationError(error, 'Failed to update profile');
 		} finally {
 			isLoading = false;
 		}
@@ -194,18 +200,10 @@
 								id="file-upload"
 								type="file"
 								accept="image/*"
-								onchange={handleFileSelect}
+								onchange={handleUploadImage}
 								aria-describedby="file-helper"
 								class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
 							/>
-							<Button
-								type="button"
-								variant="secondary"
-								onclick={handleUploadImage}
-								disabled={!selectedFile || isLoading}
-							>
-								<Upload class="h-4 w-4" />
-							</Button>
 						</div>
 						<p id="file-helper" class="text-sm text-muted-foreground">
 							PNG, JPG, or GIF up to 2MB.

@@ -113,17 +113,23 @@
 								width: 600,
 								id: (groups) => groups.join('/embed/')
 							},
-							lichess: {
-								regex: /https?:\/\/lichess\.org\/([a-zA-Z0-9\/\-]+)(\?.*)?/,
-								embedUrl: 'https://lichess.org/<%= remote_id %>',
-								html: "<iframe style='width: 100%; aspect-ratio: 10/11;' allowtransparency='true' frameborder='0'></iframe>",
-								height: 400,
-								width: 400,
-								id: (groups) => {
-									// groups[0] contains the path (e.g. 'tv/frame', 'gameId', etc.)
-									// groups[1] contains query parameters if any
-									return groups[0] + (groups[1] || '');
-								}
+							// lichessGame: {
+							// 	regex: /^https?:\/\/lichess\.org\/([a-zA-Z0-9]+)(?:[\/?#].*)?$/,
+							// 	embedUrl: 'https://lichess.org/embed/game/<%= remote_id %>?theme=auto&bg=auto#17',
+							// 	html: '<iframe width="600" height="397" frameborder="0" allowfullscreen></iframe>',
+							// 	width: 600,
+							// 	height: 397,
+							// 	id: (groups) => groups[0] // Extract game ID like "MPJcy1JW"
+							// },
+
+							// Lichess Study: https://lichess.org/study/XtFCFYlM/wIViDD8c
+							lichessStudy: {
+								regex:
+									/^https?:\/\/lichess\.org\/study\/([a-zA-Z0-9]+\/[a-zA-Z0-9]+)(?:[\/?#].*)?$/,
+								embedUrl: 'https://lichess.org/study/embed/<%= remote_id %>?theme=green',
+								html: '<iframe style="width: 100%; aspect-ratio: 4/3;" frameborder="0" allowtransparency="true"></iframe>',
+
+								id: (groups) => groups[0] // Extract study path like "XtFCFYlM/wIViDD8c"
 							}
 						}
 					}

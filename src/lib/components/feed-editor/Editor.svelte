@@ -98,7 +98,36 @@
 						}
 					}
 				},
-				embed: Embed,
+				embed: {
+					class: Embed,
+					inlineToolbar: true,
+					config: {
+						services: {
+							youtube: true,
+							codepen: {
+								regex: /https?:\/\/codepen.io\/([^\/\?\&]*)\/pen\/([^\/\?\&]*)/,
+								embedUrl:
+									'https://codepen.io/<%= remote_id %>?height=300&theme-id=0&default-tab=css,result&embed-version=2',
+								html: "<iframe height='300' scrolling='no' frameborder='no' allowtransparency='true' allowfullscreen='true' style='width: 100%;'></iframe>",
+								height: 300,
+								width: 600,
+								id: (groups) => groups.join('/embed/')
+							},
+							lichess: {
+								regex: /https?:\/\/lichess\.org\/([a-zA-Z0-9\/\-]+)(\?.*)?/,
+								embedUrl: 'https://lichess.org/<%= remote_id %>',
+								html: "<iframe style='width: 100%; aspect-ratio: 10/11;' allowtransparency='true' frameborder='0'></iframe>",
+								height: 400,
+								width: 400,
+								id: (groups) => {
+									// groups[0] contains the path (e.g. 'tv/frame', 'gameId', etc.)
+									// groups[1] contains query parameters if any
+									return groups[0] + (groups[1] || '');
+								}
+							}
+						}
+					}
+				},
 				link: Link,
 				warning: Warning,
 				color: ColorPicker

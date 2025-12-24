@@ -33,9 +33,9 @@
 				return;
 			}
 
-			// Validate file size (max 5MB)
-			if (file.size > 5 * 1024 * 1024) {
-				toast.error('Image must be less than 5MB');
+			// Validate file size (max 10MB to match account-settings.svelte)
+			if (file.size > 10 * 1024 * 1024) {
+				toast.error('Image must be less than 10MB');
 				return;
 			}
 
@@ -49,27 +49,35 @@
 
 		coverImageUploading = true;
 		try {
-			// Step 1: Generate upload URL
-			const uploadUrl = await convexClient.mutation(api.storage.generateUploadUrl, {});
+			// Step 1: Generate upload URL from R2 storage
+			const { url, key } = await convexClient.mutation(api.cfstorage.genCoverImageUploadURL, {});
 
-			// Step 2: Upload file to Convex storage
-			const result = await fetch(uploadUrl, {
-				method: 'POST',
+			// Step 2: Upload file directly to R2
+			const result = await fetch(url, {
+				method: 'PUT',
 				headers: { 'Content-Type': selectedCoverFile.type },
 				body: selectedCoverFile
 			});
 
-			const { storageId } = await result.json();
+			if (!result.ok) {
+				throw new Error('Upload to R2 failed');
+			}
 
-			// Step 3: Update the reactive feed with the new coverFileId
-			feed.coverFileId = storageId;
+			// Step 3: Update the reactive feed with the new R2 key
+			// Note: feed.coverFileId was storing Convex storage ID, now we store the R2 key
+			feed.coverFileId = key;
 			debouncedSave();
+
+			// Update the local state to show the uploaded image
+			coverImageUrl = `https://storage.feavel.com/${key}`;
 
 			// Clear selection and input
 			selectedCoverFile = null;
 			if (coverFileInput) {
 				coverFileInput.value = '';
 			}
+
+			toast.success('Cover image uploaded successfully');
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Failed to upload image';
 			console.error('Cover image upload failed:', error);
@@ -90,27 +98,19 @@
 
 	// Update cover image URL when feed.coverFileId changes
 	$effect(() => {
+		// With R2, we need to construct the URL from the R2 key
 		if (feed?.coverFileId) {
-			loadCoverImageUrl(feed.coverFileId);
+			// If feed.coverFileId is already an R2 key (not a URL), construct the URL
+			if (typeof feed.coverFileId === 'string' && !feed.coverFileId.startsWith('https://')) {
+				coverImageUrl = `https://storage.feavel.com/${feed.coverFileId}`;
+			} else if (typeof feed.coverFileId === 'string' && feed.coverFileId.startsWith('https://')) {
+				// If it's already a full URL (for backwards compatibility with any existing URLs)
+				coverImageUrl = feed.coverFileId;
+			}
 		} else {
 			coverImageUrl = null;
 		}
 	});
-
-	async function loadCoverImageUrl(storageId: Id<'_storage'>) {
-		if (!storageId) return;
-
-		coverImageUrlLoading = true;
-		try {
-			const imageUrl = await convexClient.mutation(api.storage.getImageUrl, { storageId });
-			coverImageUrl = imageUrl;
-		} catch (error) {
-			console.error('Failed to load cover image URL:', error);
-			coverImageUrl = null;
-		} finally {
-			coverImageUrlLoading = false;
-		}
-	}
 </script>
 
 <div class="space-y-4">

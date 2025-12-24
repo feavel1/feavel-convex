@@ -44,7 +44,7 @@ export const createFeed = mutation({
 		language: v.optional(v.string()),
 		public: v.boolean(),
 		meta: v.optional(v.any()),
-		coverFileId: v.optional(v.id('_storage')),
+		coverFileId: v.optional(v.string()),
 		slug: v.optional(v.string())
 	},
 	handler: async (ctx, args) => {
@@ -89,7 +89,7 @@ export const updateFeed = mutation({
 		language: v.optional(v.string()),
 		public: v.optional(v.boolean()),
 		meta: v.optional(v.any()),
-		coverFileId: v.optional(v.id('_storage')),
+		coverFileId: v.optional(v.string()),
 		updatedAt: v.optional(v.number()),
 		slug: v.optional(v.string())
 	},

@@ -24,3 +24,31 @@ export const genAvatarUploadURL = mutation({
 		return r2.generateUploadUrl(key);
 	}
 });
+
+// Generate upload URL for cover images in feeds
+export const genCoverImageUploadURL = mutation({
+	args: {},
+	handler: async (ctx) => {
+		// Check that user is authenticated
+		const user = await authComponent.getAuthUser(ctx);
+		if (!user) {
+			throw new Error('User not authenticated');
+		}
+		const key = `covers/${crypto.randomUUID()}`;
+		return r2.generateUploadUrl(key);
+	}
+});
+
+// Generate upload URL for general files in feeds
+export const genFeedFileUploadURL = mutation({
+	args: {},
+	handler: async (ctx) => {
+		// Check that user is authenticated
+		const user = await authComponent.getAuthUser(ctx);
+		if (!user) {
+			throw new Error('User not authenticated');
+		}
+		const key = `feed-files/${crypto.randomUUID()}`;
+		return r2.generateUploadUrl(key);
+	}
+});

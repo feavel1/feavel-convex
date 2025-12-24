@@ -28,7 +28,7 @@ const feed = defineTable({
 	meta: v.optional(v.any()),
 
 	// cover file ID referencing storage
-	coverFileId: v.optional(v.id('_storage')),
+	coverFileId: v.optional(v.string()),
 
 	// language code (ISO 639-1) with default 'en'
 	language: v.optional(v.string()),

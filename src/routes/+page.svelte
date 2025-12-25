@@ -93,7 +93,7 @@
 			</GlowingStarsBackgroundCard>
 
 			<div
-				class="relative mx-auto flex h-[30rem] max-w-sm flex-col items-start border border-black/[0.2] p-6 dark:border-white/[0.2]"
+				class="relative mx-auto flex h-[30rem] max-w-xs flex-col items-start border border-black/[0.2] p-6 dark:border-white/[0.2]"
 			>
 				<Icon class="absolute -top-3 -left-3 h-6 w-6 text-black dark:text-white" />
 				<Icon class="absolute -bottom-3 -left-3 h-6 w-6 text-black dark:text-white" />

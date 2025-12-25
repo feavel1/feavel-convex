@@ -8,11 +8,5 @@
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"
-	},
-	"routes": [
-		{
-			"pattern": "feavel.com",
-			"custom_domain": true
-		}
-	]
+	}
 }
